@@ -170,62 +170,27 @@
 
   /* --- controls below the scene --- */
   #controls {
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    padding: 10px 16px calc(env(safe-area-inset-bottom, 10px) + 8px);
+    padding: 8px 16px calc(env(safe-area-inset-bottom, 10px) + 10px);
     background: #16211a;
   }
-  .aim-wrap { flex: 1; }
-  .aim-label, .power-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  #aim-track {
-    position: relative;
-    height: 44px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.15);
+  .hint {
+    font-size: 12px;
+    opacity: 0.7;
+    text-align: center;
+    margin: 0 0 8px;
   }
-  #aim-handle {
-    position: absolute;
-    top: 3px;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--gold);
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    color: #1a1a1a;
-  }
-
-  #power-wrap { width: 72px; }
-  #power-track {
-    position: relative;
-    height: 120px;
-    width: 56px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.15);
+  #charge-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.35);
     overflow: hidden;
-    display: flex;
-    align-items: flex-end;
   }
-  #power-fill {
+  #charge-fill {
     width: 100%;
     height: 100%;
-    background: linear-gradient(to top, #e0543c, var(--gold));
-    transform: scaleY(0);
-    transform-origin: bottom;
-    transition: transform 0.05s linear;
-  }
-  #power-knob {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    inset: 0;
+    background: linear-gradient(to right, #e0543c, var(--gold));
+    transform: scaleX(0);
+    transform-origin: left;
   }
 
   .panel-overlay {
@@ -373,19 +338,8 @@
     </div>
 
     <div id="controls">
-      <div class="aim-wrap">
-        <div class="aim-label">Drag to aim</div>
-        <div id="aim-track">
-          <div id="aim-handle">&#127919;</div>
-        </div>
-      </div>
-      <div id="power-wrap">
-        <div class="power-label">Pull</div>
-        <div id="power-track">
-          <div id="power-fill"></div>
-          <div id="power-knob"></div>
-        </div>
-      </div>
+      <p class="hint">Hold &amp; drag anywhere to aim &middot; release to shoot</p>
+      <div id="charge-bar"><div id="charge-fill"></div></div>
     </div>
   </div>
 
@@ -431,11 +385,15 @@
     ];
     const IDEAL_POWER = 0.6;
     const ARROWS_PER_ROUND = 3;
+    const CHARGE_MS = 1600;
+    const MAX_HOLD_MS = 2300;
+    const AIM_RANGE_PX = 150;
     // center -> outer: gold, gold, red, red, blue, blue, black, black, white, white
     const RING_COLORS = ['#f6c453', '#f6c453', '#d94c3a', '#d94c3a', '#3a6fd9', '#3a6fd9', '#1a1a1a', '#1a1a1a', '#fdf8ef', '#fdf8ef'];
 
     const canvas = document.getElementById('target-canvas');
     const ctx = canvas.getContext('2d');
+    const scene = document.getElementById('scene');
     const targetStand = document.getElementById('target-stand');
     const distanceBadge = document.getElementById('distance-badge');
     const tierNameEl = document.getElementById('tier-name');
@@ -443,10 +401,7 @@
     const windArrowEl = document.getElementById('wind-arrow');
     const windSpeedEl = document.getElementById('wind-speed');
     const shotResultEl = document.getElementById('shot-result');
-    const aimTrack = document.getElementById('aim-track');
-    const aimHandle = document.getElementById('aim-handle');
-    const powerFill = document.getElementById('power-fill');
-    const powerKnob = document.getElementById('power-knob');
+    const chargeFill = document.getElementById('charge-fill');
     const roundEndEl = document.getElementById('round-end');
     const roundEndTitle = document.getElementById('round-end-title');
     const roundEndSub = document.getElementById('round-end-sub');
@@ -472,6 +427,10 @@
     let aimX = 0; // -1..1 relative to target radius
     let power = 0; // 0..1
     let lastSubmittedScore = 0;
+    let aiming = false;
+    let aimAnchorX = 0;
+    let holdStartTime = 0;
+    let holdRAF = null;
 
     const vg = await VatarKit.init('archery');
     if (vg.devMode) console.log('[archery] dev mode, mock player');
@@ -558,16 +517,28 @@
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
 
-      // reticle preview, offset by current aim
+      // reticle preview, offset by current aim — outlined so it reads against every ring color
       const reticleX = cx + aimX * R * 1.4;
       ctx.beginPath();
-      ctx.moveTo(reticleX - 10, cy);
-      ctx.lineTo(reticleX + 10, cy);
-      ctx.moveTo(reticleX, cy - 10);
-      ctx.lineTo(reticleX, cy + 10);
-      ctx.strokeStyle = '#f6c453';
-      ctx.lineWidth = 2;
+      ctx.moveTo(reticleX - 11, cy);
+      ctx.lineTo(reticleX + 11, cy);
+      ctx.moveTo(reticleX, cy - 11);
+      ctx.lineTo(reticleX, cy + 11);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)';
       ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+
+      // charge/timer ring while holding to aim
+      if (aiming) {
+        ctx.beginPath();
+        ctx.arc(reticleX, cy, 24, -Math.PI / 2, -Math.PI / 2 + power * Math.PI * 2);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = power >= 1 ? '#ff5a3c' : '#ffffff';
+        ctx.stroke();
+      }
 
       // previous landed shots this round
       landedShots.forEach((s) => {
@@ -613,7 +584,7 @@
       showShotResult(score);
 
       power = 0;
-      powerFill.style.transform = 'scaleY(0)';
+      chargeFill.style.transform = 'scaleX(0)';
       render();
       updateHeader();
 
@@ -662,53 +633,65 @@
       startRound(nextIndex);
     });
 
-    // --- aim control: drag along the horizontal track ---
-    let aimDragging = false;
-    function setAimFromClientX(clientX) {
-      const rect = aimTrack.getBoundingClientRect();
-      const t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      aimX = t * 2 - 1; // -1..1
-      aimHandle.style.left = `${t * 100}%`;
-      render();
+    // --- unified aim control: press+hold anywhere on the scene, drag to aim,
+    // power charges automatically the longer you hold, release to shoot.
+    // Holding past MAX_HOLD_MS auto-releases, like the iMessage version. ---
+    function isInteractiveTarget(el) {
+      return el.closest('button, .panel-overlay, #round-end, #leaderboard-sheet');
     }
-    aimTrack.addEventListener('pointerdown', (e) => {
-      aimDragging = true;
-      aimTrack.setPointerCapture(e.pointerId);
-      setAimFromClientX(e.clientX);
-    });
-    aimTrack.addEventListener('pointermove', (e) => {
-      if (aimDragging) setAimFromClientX(e.clientX);
-    });
-    aimTrack.addEventListener('pointerup', () => { aimDragging = false; });
-    aimTrack.addEventListener('pointercancel', () => { aimDragging = false; });
 
-    // --- power control: press, drag up to build power, release to shoot ---
-    let powerDragging = false;
-    let powerStartY = 0;
-    function setPowerFromDelta(dy) {
-      const t = Math.max(0, Math.min(1, dy / 110));
-      power = t;
-      powerFill.style.transform = `scaleY(${t})`;
+    function chargeTick() {
+      if (!aiming) return;
+      const elapsed = performance.now() - holdStartTime;
+      power = Math.min(1, elapsed / CHARGE_MS);
+      chargeFill.style.transform = `scaleX(${power})`;
+      render();
+      if (elapsed >= MAX_HOLD_MS) {
+        endAim();
+        return;
+      }
+      holdRAF = requestAnimationFrame(chargeTick);
     }
-    powerKnob.addEventListener('pointerdown', (e) => {
-      if (paused) return;
-      powerDragging = true;
-      powerStartY = e.clientY;
-      powerKnob.setPointerCapture(e.pointerId);
-    });
-    powerKnob.addEventListener('pointermove', (e) => {
-      if (!powerDragging) return;
-      const dy = powerStartY - e.clientY;
-      setPowerFromDelta(dy);
-    });
-    function releasePower() {
-      if (!powerDragging) return;
-      powerDragging = false;
-      if (power > 0.08) shoot();
-      else { power = 0; powerFill.style.transform = 'scaleY(0)'; }
+
+    function endAim() {
+      if (!aiming) return;
+      aiming = false;
+      if (holdRAF) cancelAnimationFrame(holdRAF);
+      const heldMs = performance.now() - holdStartTime;
+      if (heldMs < 60) {
+        // too quick to count as a real draw — cancel without firing
+        power = 0;
+        aimX = 0;
+        chargeFill.style.transform = 'scaleX(0)';
+        render();
+        return;
+      }
+      shoot();
     }
-    powerKnob.addEventListener('pointerup', releasePower);
-    powerKnob.addEventListener('pointercancel', releasePower);
+
+    function anyOverlayOpen() {
+      return roundEndEl.classList.contains('open')
+        || ladderOverlay.classList.contains('open')
+        || shopOverlay.classList.contains('open')
+        || leaderboardSheet.classList.contains('open');
+    }
+
+    scene.addEventListener('pointerdown', (e) => {
+      if (paused || arrowsShot >= ARROWS_PER_ROUND || anyOverlayOpen()) return;
+      if (isInteractiveTarget(e.target)) return;
+      aiming = true;
+      aimAnchorX = e.clientX;
+      holdStartTime = performance.now();
+      try { scene.setPointerCapture(e.pointerId); } catch (err) {}
+      chargeTick();
+    });
+    scene.addEventListener('pointermove', (e) => {
+      if (!aiming) return;
+      const dx = e.clientX - aimAnchorX;
+      aimX = Math.max(-1, Math.min(1, dx / AIM_RANGE_PX));
+    });
+    scene.addEventListener('pointerup', endAim);
+    scene.addEventListener('pointercancel', endAim);
 
     // --- ladder panel ---
     function renderLadder() {
@@ -804,7 +787,17 @@
       leaderboardSheet.classList.remove('open');
     });
 
-    vg.onPause(() => { paused = true; });
+    vg.onPause(() => {
+      paused = true;
+      if (aiming) {
+        aiming = false;
+        if (holdRAF) cancelAnimationFrame(holdRAF);
+        power = 0;
+        aimX = 0;
+        chargeFill.style.transform = 'scaleX(0)';
+        render();
+      }
+    });
     vg.onResume(() => { paused = false; });
 
     renderLadder();
