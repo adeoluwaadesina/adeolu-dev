@@ -218,6 +218,48 @@
   #leaderboard-list { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
   #leaderboard-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .leaderboard-me { font-size: 12px; opacity: 0.75; text-align: center; margin: 0 0 12px; }
+  body { background: #091e2b; color: #f7f1dc; }
+  #app { position: relative; background: radial-gradient(ellipse at 80% 35%,#2c747b 0,#154452 42%,#102b3a 75%); }
+  header { padding: max(22px,env(safe-area-inset-top)) 22px 0; }
+  .title { font-size: 30px; letter-spacing: -1.2px; font-weight: 900; text-transform: uppercase; }
+  .title::before { content: 'LULUGAMES / LAGOON CIRCUIT'; display: block; font: 9px sans-serif; letter-spacing: 2px; color: #9fc6cb; margin-bottom: 8px; }
+  .subinfo { margin-top: 5px; font: 11px monospace; color: #bed4d3; }
+  .icon-row { justify-content: flex-start; padding: 15px 22px 0; gap: 8px; }
+  .icon-btn { min-height: 44px; font-size: 11px; border-radius: 9px; background: #061c2870; padding: 8px 12px; }
+  button { cursor: pointer; touch-action: manipulation; }
+  button:active { filter: brightness(.9); }
+  button:focus-visible { outline: 3px solid #f6cc73; outline-offset: 2px; }
+  #scene-wrap { padding: 0; }
+  #grid-canvas { width: 100%; height: auto; max-height: 100%; object-fit: contain; }
+  .announce { top: 18px; width: calc(100% - 44px); justify-content: center; padding: 14px 12px; background: #f1ecdc; color: #112b36; border: 1px solid #ffffff6b; box-shadow: 0 6px 20px #04172140; border-radius: 12px; opacity: 1; }
+  .announce-text { font-size: 15px; }
+  .announce-swatch { border: 2px solid #14253040; width: 24px; height: 24px; }
+  #countdown-track { top: 75px; left: 28px; right: 28px; height: 4px; }
+  #countdown-fill { background: #f5d081; }
+  #joystick-wrap { align-items: center; gap: 25px; border-top: 1px solid #ffffff12; background: #0b2431c0; padding: 15px 22px max(20px,env(safe-area-inset-bottom)); }
+  #joystick-base { flex: 0 0 108px; height: 108px; background: radial-gradient(circle,#255668,#102e3d); border: 1px solid #99c7c33b; box-shadow: inset 0 0 0 12px #071e282f; }
+  #joystick-base::before { content: '+'; position: absolute; inset: 0; display: grid; place-items: center; color: #8fb5bb80; font-size: 50px; font-weight: 200; }
+  #joystick-knob { width: 48px; height: 48px; background: linear-gradient(145deg,#ffe4a0,#d8a955); border: 2px solid #f4d593; box-shadow: 0 5px 12px #0005; }
+  #drive-hint { max-width: 170px; font-size: 11px; color: #a6c4c9; line-height: 1.7; }
+  #drive-hint strong { color: #f4d38a; font-size: 12px; }
+  #run-status { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font: 10px monospace; color: #bbd8d9; letter-spacing: 1px; }
+  .panel, #gameover, #leaderboard-sheet { background: #102c3a; border: 1px solid #8ebbb536; box-shadow: 0 20px 50px #04131c88; }
+  .panel-overlay { backdrop-filter: blur(6px); touch-action: pan-y; }
+  .row-btn { min-height: 44px; }
+  #start-overlay { position: absolute; background: #071c28b5; }
+  #start-overlay .panel { padding: 26px; }
+  #start-overlay h2 { font-size: 29px; line-height: 1.1; margin-bottom: 16px; }
+  #start-overlay p { font-size: 13px; color: #b3d0d0; line-height: 1.7; }
+  .mode-buttons { display: flex; gap: 8px; margin-top: 22px; }
+  .mode-buttons button { flex: 1; }
+  #solo-btn { background: #f5cf7b; }
+  #bots-btn { background: #d7ebe4; }
+  #countdown-number { font: bold 19px monospace; min-width: 38px; text-align: right; }
+  #pause-btn { margin-left: auto; }
+  #paint-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .paint-choice { width: 36px; height: 44px; border: 2px solid #ffffff55; border-radius: 9px; }
+  .paint-choice[aria-pressed="true"] { outline: 2px solid #f5cf7b; outline-offset: 2px; }
+  @media(max-height:680px){header{padding-top:12px}.title{font-size:24px}.icon-row{padding-top:8px}#joystick-wrap{padding-top:8px;padding-bottom:10px}#joystick-base{flex-basis:85px;height:85px}.announce{top:4px;padding:8px}#countdown-track{top:48px}}
 </style>
 </head>
 <body>
@@ -231,22 +273,31 @@
     <div class="icon-row">
       <button class="icon-btn" id="shop-btn">Shop</button>
       <button class="icon-btn" id="leaderboard-btn">Leaderboard</button>
+      <button class="icon-btn" id="sound-btn" aria-pressed="false">Sound on</button>
+      <button class="icon-btn" id="pause-btn">Pause</button>
     </div>
 
     <div id="scene-wrap">
-      <canvas id="grid-canvas" width="340" height="340"></canvas>
+      <canvas id="grid-canvas" width="680" height="840" aria-label="Floating colour arena"></canvas>
       <div class="announce" id="announce">
         <div class="announce-swatch" id="announce-swatch"></div>
         <div class="announce-text" id="announce-text">RED</div>
+        <span id="countdown-number"></span>
       </div>
       <div id="countdown-track"><div id="countdown-fill"></div></div>
+      <div id="run-status">SOLO · SURVIVE THE DROP</div>
     </div>
 
     <div id="joystick-wrap">
       <div id="joystick-base">
         <div id="joystick-knob"></div>
       </div>
+      <div id="drive-hint"><strong>Steer. Settle. Survive.</strong><br>Drag the stick to drive.<br>Release to brake on the called colour.</div>
     </div>
+    <div class="panel-overlay open" id="start-overlay">
+      <div class="panel"><h2>Right colour.<br>Right on time.</h2><p>Drive onto the called colour before the floor drops into the lagoon. Match the symbol too. Stay centred, and mind the edge.</p><p id="start-status">Solo survival or you + three bot drivers.</p><div class="mode-buttons"><button class="row-btn" id="solo-btn" disabled>Solo drive</button><button class="row-btn" id="bots-btn" disabled>With 3 bots</button></div></div>
+    </div>
+    <div class="panel-overlay" id="pause-overlay"><div class="panel"><h2>Parked for a moment.</h2><p>The round is paused.</p><button class="close-panel" id="resume-btn">Keep driving</button></div></div>
   </div>
 
   <div id="gameover">
@@ -254,7 +305,7 @@
     <p id="gameover-sub"></p>
     <div class="btn-row">
       <button id="continue-btn">Continue &mdash; &#8358;100</button>
-      <button id="endrun-btn">End run</button>
+      <button id="endrun-btn">Play again · free</button>
     </div>
   </div>
 
@@ -262,6 +313,7 @@
     <div class="panel">
       <h2>Shop</h2>
       <div id="shop-rows"></div>
+      <div id="paint-options" aria-label="Car paint"></div>
       <button class="close-panel" data-close="shop-overlay">Close</button>
     </div>
   </div>
@@ -278,23 +330,23 @@
   <script>
   (async function () {
     const COLORS = [
-      { name: 'Red', hex: '#d94c3a', shape: 'circle' },
-      { name: 'Blue', hex: '#3a6fd9', shape: 'square' },
-      { name: 'Green', hex: '#3a9d4f', shape: 'triangle' },
-      { name: 'Yellow', hex: '#f6c453', shape: 'diamond' },
-      { name: 'Purple', hex: '#9b59b6', shape: 'star' },
-      { name: 'Orange', hex: '#e67e22', shape: 'plus' },
+      { name: 'Red', hex: '#ef6264', shape: 'circle' },
+      { name: 'Blue', hex: '#478cdc', shape: 'square' },
+      { name: 'Green', hex: '#66bb91', shape: 'triangle' },
+      { name: 'Yellow', hex: '#f3ce69', shape: 'diamond' },
+      { name: 'Purple', hex: '#a589d9', shape: 'star' },
+      { name: 'Orange', hex: '#f1a460', shape: 'plus' },
     ];
     const BONUS_COLORS = ['#ff6ec7', '#2ecfe0', '#c4ff4d', '#ff9f4d', '#9dff8f'];
     const GRID_N = 4;
     const CANVAS_SIZE = 340;
     const TILE = CANVAS_SIZE / GRID_N;
     const CAR_R = 16;
-    const MAX_SPEED = 220; // px/sec
+    const MAX_SPEED = 185; // world units/sec
     const ANNOUNCE_MS = 950;
     const DROP_MS = 380;
-    const RESOLVE_MS = 150;
-    const REGROW_MS = 320;
+    const RESOLVE_MS = 1000;
+    const REGROW_MS = 700;
 
     const canvas = document.getElementById('grid-canvas');
     const ctx = canvas.getContext('2d');
@@ -333,6 +385,27 @@
     let joyDir = { x: 0, y: 0 };
     let joyActive = false;
     let lastFrame = null;
+    let frameId = null;
+    let accumulator = 0;
+    let sdkPaused = false;
+    let manualPaused = false;
+    let started = false;
+    let botsMode = false;
+    let bots = [];
+    let trails = [];
+    let sparkles = [];
+    let simTime = 0;
+    let lastBeep = -1;
+    let audio = null;
+    let muted = false;
+    let paintIndex = -1;
+    const startOverlay = document.getElementById('start-overlay');
+    const pauseOverlay = document.getElementById('pause-overlay');
+    const countdownNumber = document.getElementById('countdown-number');
+    const runStatus = document.getElementById('run-status');
+    car = { ...car, vx:0, vy:0, angle:0, alive:true, fall:0, color:'#f3d184' };
+    function unlockSound(){if(!audio){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audio=new AC();}if(audio&&!muted&&!paused)audio.resume().catch(()=>{});}
+    function tone(freq,duration=.12,end=freq){if(!audio||muted||paused||audio.state!=='running')return;const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type='triangle';o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+duration);g.gain.setValueAtTime(.055,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+duration);}
 
     const vg = await VatarKit.init('color-rush');
     if (vg.devMode) console.log('[color-rush] dev mode, mock player');
@@ -343,6 +416,17 @@
       bestRounds = restored.save.bestRounds;
       lastSubmittedScore = bestRounds;
     }
+    // onClaim must be registered before recoverPendingPurchases() — it fires
+    // claim handlers synchronously for anything recovered, so registering
+    // after would silently miss purchases recovered on this load. The
+    // callback body only runs later (on an actual claim), so referencing
+    // renderShop/SHOP_ITEMS here before their declaration point is safe.
+    vg.onClaim((productId) => {
+      if (productId === 'trail_neon' || (vg.devMode && productId === 'dev_product')) owned.trail_neon = true;
+      if (productId === 'premium_car_pack') owned.premium_car_pack = true;
+      renderShop();
+    });
+
     await vg.recoverPendingPurchases();
 
     function colorCountForRound(r) {
@@ -353,7 +437,7 @@
     }
 
     function carColorHex() {
-      return owned.trail_neon ? '#39ff9e' : '#f6c453';
+      return owned.premium_car_pack && paintIndex >= 0 ? BONUS_COLORS[paintIndex] : '#f3d184';
     }
 
     function newRoundTiles(r) {
@@ -368,6 +452,13 @@
       if (!arr.some((t) => t.colorIndex === target)) {
         arr[Math.floor(Math.random() * arr.length)].colorIndex = target;
       }
+      // Progressively fewer safe tiles, with a reachable tile in every round.
+      const safeCount=Math.max(2,6-Math.floor((r-1)/3));
+      arr.forEach(t=>{if(t.colorIndex===target)t.colorIndex=(target+1+Math.floor(Math.random()*(n-1)))%n;});
+      const shuffled=[...arr].sort(()=>Math.random()-.5);
+      shuffled.slice(0,safeCount).forEach(t=>t.colorIndex=target);
+      const nearest=[...arr].sort((a,b)=>Math.hypot(a.col*TILE+TILE/2-car.x,a.row*TILE+TILE/2-car.y)-Math.hypot(b.col*TILE+TILE/2-car.x,b.row*TILE+TILE/2-car.y))[0];
+      if(!arr.some(t=>t.colorIndex===target&&Math.hypot(t.col*TILE+TILE/2-car.x,t.row*TILE+TILE/2-car.y)<200))nearest.colorIndex=target;
       return { tiles: arr, target, colorCount: n };
     }
 
@@ -378,11 +469,14 @@
       targetColorIndex = gen.target;
       state = 'announce';
       stateTimer = 0;
+      lastBeep=-1;
       announceSwatch.style.background = COLORS[targetColorIndex].hex;
-      announceText.textContent = `${COLORS[targetColorIndex].name.toUpperCase()} ${shapeGlyph(COLORS[targetColorIndex].shape)}`;
+      announceText.textContent = `GET TO ${COLORS[targetColorIndex].name.toUpperCase()} ${shapeGlyph(COLORS[targetColorIndex].shape)}`;
+      countdownNumber.textContent=(countdownForRound(r)/1000).toFixed(1);
       announceEl.classList.add('show');
       countdownTrack.classList.remove('show');
       updateHeader();
+      bots.forEach(b=>{b.reaction=.3+Math.random()*.65;b.target=null;});
     }
 
     function shapeGlyph(shape) {
@@ -390,7 +484,8 @@
     }
 
     function updateHeader() {
-      roundInfoEl.textContent = `Round ${round} · Best ${bestRounds}`;
+      roundInfoEl.textContent = `ROUND ${String(round).padStart(2,'0')} / BEST ${bestRounds} · ${botsMode?'BOTS':'SOLO'}`;
+      runStatus.textContent=botsMode ? `${[car,...bots].filter(c=>c.alive).length} / 4 DRIVERS · ${round-1} ROUNDS CLEARED` : `${round-1} ROUNDS CLEARED · MIND THE EDGE`;
     }
 
     function drawShape(cx, cy, size, shape, color) {
@@ -436,51 +531,57 @@
     }
 
     function render() {
-      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-      const n = colorCountForRound(round);
-      tiles.forEach((t) => {
-        const x = t.col * TILE, y = t.row * TILE;
-        const scale = 1 - t.fallT;
-        const alpha = t.alive ? 1 : Math.max(0, 1 - t.fallT);
-        if (t.fallT >= 1 && !t.alive) return; // fully gone — hole in the floor
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        const pad = 3;
-        const w = (TILE - pad * 2) * scale;
-        const h = (TILE - pad * 2) * scale;
-        const cx = x + TILE / 2, cy = y + TILE / 2;
-        const color = COLORS[t.colorIndex % COLORS.length].hex;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(cx - w / 2, cy - h / 2, w, h, 8 * scale);
-        else ctx.rect(cx - w / 2, cy - h / 2, w, h);
-        ctx.fill();
-        if (scale > 0.4) {
-          drawShape(cx, cy, Math.min(w, h) * 0.22, COLORS[t.colorIndex % COLORS.length].shape, 'rgba(255,255,255,0.85)');
-        }
+      ctx.setTransform(2,0,0,2,0,0);
+      ctx.clearRect(0,0,340,420);
+      // Lagoon, distant original skyline and bridge. No external textures.
+      let g=ctx.createLinearGradient(0,70,0,420);g.addColorStop(0,'#568c8d');g.addColorStop(.35,'#246773');g.addColorStop(1,'#123c51');ctx.fillStyle=g;ctx.fillRect(0,75,340,345);
+      ctx.fillStyle='#88aba4';ctx.fillRect(0,66,340,28);
+      for(let i=0;i<28;i++){const x=i*14-12,h=7+(i*19%33);ctx.fillStyle=i%2?'#507f80':'#68918b';ctx.fillRect(x,91-h,10,h);ctx.fillStyle='#c2cba350';ctx.fillRect(x+3,94-h,2,3);}
+      ctx.strokeStyle='#a6b9a5';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,84);ctx.lineTo(340,84);ctx.moveTo(57,85);ctx.lineTo(57,42);ctx.lineTo(61,42);ctx.lineTo(61,85);ctx.moveTo(114,85);ctx.lineTo(114,49);ctx.lineTo(118,49);ctx.lineTo(118,85);ctx.stroke();ctx.lineWidth=.6;for(let x=15;x<155;x+=8){ctx.beginPath();ctx.moveTo(x,84);ctx.lineTo(x<87?59:116,x<87?43:50);ctx.stroke();}
+      for(let i=0;i<65;i++){const y=95+(i*43%320),x=(i*97+Math.sin(simTime*.8+i)*7)%360;ctx.strokeStyle=i%3?'#bde1d518':'#aad3d332';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+8+i%18,y);ctx.stroke();}
+      ctx.fillStyle='#031a2c60';ctx.beginPath();ctx.ellipse(174,302,143,77,0,0,Math.PI*2);ctx.fill();
+      tiles.forEach(t=>{
+        if(t.fallT>=1)return;
+        const pad=tileInset(),x=t.col*TILE+pad,y=t.row*TILE+pad,size=TILE-pad*2;
+        const depth=t.fallT*t.fallT*85, corners=[[x,y],[x+size,y],[x+size,y+size],[x,y+size]].map(([x,y])=>project(x,y,depth));
+        ctx.save();ctx.globalAlpha=1-t.fallT;
+        polygon([...corners.slice(2),{x:corners[3].x,y:corners[3].y+10},{x:corners[2].x,y:corners[2].y+10}], '#133848');
+        polygon([corners[1],corners[2],{x:corners[2].x,y:corners[2].y+10},{x:corners[1].x,y:corners[1].y+10}], '#1b4651');
+        polygon(corners,COLORS[t.colorIndex].hex);
+        ctx.strokeStyle='#fff5db65';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(corners[3].x,corners[3].y);ctx.lineTo(corners[0].x,corners[0].y);ctx.lineTo(corners[1].x,corners[1].y);ctx.stroke();
+        const center=project(x+size/2,y+size/2,depth);ctx.save();ctx.translate(center.x,center.y);ctx.scale(.8,.58);drawShape(0,0,15,COLORS[t.colorIndex].shape,'#0b29343f');ctx.restore();
+        if(state==='move'&&stateTimer>countdownForRound(round)-850&&t.colorIndex===targetColorIndex){ctx.globalAlpha=(.2+Math.sin(simTime*15)*.13)*(1-t.fallT);polygon(corners,'#fff9ce');}
         ctx.restore();
       });
-
-      // car
-      ctx.beginPath();
-      ctx.arc(car.x, car.y, CAR_R, 0, Math.PI * 2);
-      ctx.fillStyle = carColorHex();
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-      ctx.stroke();
-      if (owned.trail_neon) {
-        ctx.beginPath();
-        ctx.arc(car.x, car.y, CAR_R + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(57,255,158,0.5)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-      }
+      for(const t of trails){const age=simTime-t.at;if(age>.7)continue;const p=project(t.x,t.y);ctx.globalAlpha=(1-age/.7)*.5;ctx.fillStyle=t.neon?'#8affcf':'#133340';ctx.beginPath();ctx.ellipse(p.x,p.y,t.neon?4:2,2,0,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+      [...bots,car].sort((a,b)=>a.y-b.y).forEach(drawCar);
+      for(const s of sparkles){const age=simTime-s.at;if(age>1)continue;ctx.globalAlpha=1-age;ctx.strokeStyle='#c7f6e6';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(s.x,s.y,8+age*26,3+age*9,0,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=1;
+    }
+    function project(x,y,drop=0){return{x:170+(x-170)*(.67+y/340*.27),y:130+y*.61+drop};}
+    function polygon(points,color){ctx.fillStyle=color;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();}
+    function tileInset(){return 2+Math.min(5,Math.floor((round-1)/4));}
+    function drawCar(c){
+      if(!c.alive&&c.fall>=1)return;
+      const p=project(c.x,c.y,c.fall*c.fall*70), scale=(.78+c.y/340*.22)*(1-c.fall*.75);
+      ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale*.78);ctx.globalAlpha=1-c.fall;
+      ctx.fillStyle='#061e3266';ctx.beginPath();ctx.ellipse(3,7,17,24,0,0,Math.PI*2);ctx.fill();
+      ctx.rotate(c.angle);
+      ctx.fillStyle='#10212b';for(const x of [-16,10])for(const y of [-14,9])ctx.fillRect(x,y,6,10);
+      ctx.fillStyle=c===car?carColorHex():c.color;ctx.beginPath();ctx.roundRect(-12,-23,24,45,7);ctx.fill();
+      const shade=ctx.createLinearGradient(-12,0,12,0);shade.addColorStop(0,'#ffffff60');shade.addColorStop(.35,'#ffffff05');shade.addColorStop(1,'#102d4f70');ctx.fillStyle=shade;ctx.fill();
+      ctx.fillStyle='#183a4b';ctx.beginPath();ctx.roundRect(-9,-13,18,23,4);ctx.fill();
+      ctx.fillStyle='#84bcc2';ctx.beginPath();ctx.moveTo(-7,-11);ctx.lineTo(7,-11);ctx.lineTo(8,-5);ctx.lineTo(-8,-5);ctx.fill();
+      ctx.fillStyle=c===car?carColorHex():c.color;ctx.fillRect(-7,-3,14,10);
+      ctx.fillStyle='#eff8d5';ctx.fillRect(-9,-22,5,3);ctx.fillRect(4,-22,5,3);
+      ctx.fillStyle='#ff6564';ctx.fillRect(-9,18,5,3);ctx.fillRect(4,18,5,3);
+      ctx.strokeStyle='#fff8d66b';ctx.lineWidth=1;ctx.strokeRect(-5,-2,10,7);
+      ctx.restore();
+      if(c===car&&c.alive){ctx.fillStyle='#fff0bd';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.fillText('YOU',p.x,p.y-27);ctx.beginPath();ctx.moveTo(p.x-3,p.y-24);ctx.lineTo(p.x+3,p.y-24);ctx.lineTo(p.x,p.y-21);ctx.fill();}
     }
 
-    function carTile() {
-      const col = Math.max(0, Math.min(GRID_N - 1, Math.floor(car.x / TILE)));
-      const row = Math.max(0, Math.min(GRID_N - 1, Math.floor(car.y / TILE)));
+    function carTile(c=car) {
+      const col = Math.floor(c.x / TILE);
+      const row = Math.floor(c.y / TILE);
       return tiles.find((t) => t.col === col && t.row === row);
     }
 
@@ -493,71 +594,117 @@
         const spot = safe[Math.floor(Math.random() * safe.length)] || tiles[0];
         car.x = spot.col * TILE + TILE / 2;
         car.y = spot.row * TILE + TILE / 2;
-        startRound(round + 1);
+        car.alive=true;car.fall=0;car.vx=0;car.vy=0;
+        startRound(round);
         return;
       }
       state = 'gameover';
+      releaseJoy();tone(140,.3,45);
       gameoverTitle.textContent = `You fell! Round ${round}`;
       gameoverSub.textContent = usedContinueThisRun
         ? `No more continues this run. Final: round ${round - 1} survived.`
-        : `Oya, one more chance?`;
+        : `${round-1} ${round===2?'round':'rounds'} survived. Oya, another go? Play again for free or use one paid continue.`;
       continueBtn.style.display = usedContinueThisRun ? 'none' : 'block';
       gameoverEl.classList.add('open');
 
       const survived = round - 1;
       if (survived > bestRounds) {
         bestRounds = survived;
+        updateHeader();
         if (bestRounds !== lastSubmittedScore) {
-          lastSubmittedScore = bestRounds;
-          await vg.submitScore(bestRounds);
+          try{await vg.submitScore(bestRounds);lastSubmittedScore=bestRounds;}catch(err){console.warn('[color-rush] score unavailable',err.code);}
         }
       }
-      await vg.saveGame({ bestRounds });
+      vg.saveGame({ bestRounds }).catch(()=>console.warn('[color-rush] save unavailable'));
     }
 
     function anyOverlayOpen() {
-      return shopOverlay.classList.contains('open') || leaderboardSheet.classList.contains('open');
+      return shopOverlay.classList.contains('open') || leaderboardSheet.classList.contains('open') || pauseOverlay.classList.contains('open') || startOverlay.classList.contains('open');
     }
 
     function tick(now) {
-      if (paused || anyOverlayOpen()) { lastFrame = null; requestAnimationFrame(tick); return; }
+      if (paused || !started || anyOverlayOpen()) { lastFrame = null;frameId=null; return; }
       if (lastFrame === null) lastFrame = now;
-      const dt = Math.min(0.05, (now - lastFrame) / 1000);
+      const dt = Math.min(0.1, (now - lastFrame) / 1000);
       lastFrame = now;
-
-      if (state !== 'gameover') {
-        car.x += joyDir.x * MAX_SPEED * dt;
-        car.y += joyDir.y * MAX_SPEED * dt;
-        car.x = Math.max(CAR_R, Math.min(CANVAS_SIZE - CAR_R, car.x));
-        car.y = Math.max(CAR_R, Math.min(CANVAS_SIZE - CAR_R, car.y));
+      accumulator+=dt;
+      while(accumulator>=1/120){step(1/120);accumulator-=1/120;}
+      render();frameId=requestAnimationFrame(tick);
+    }
+    function steer(c,dir,dt){
+      if(!c.alive){c.fall=Math.min(1,c.fall+dt*1.6);return;}
+      const strength=Math.min(1,Math.hypot(dir.x,dir.y));
+      if(strength>.06){const wanted=Math.atan2(dir.x,-dir.y),delta=Math.atan2(Math.sin(wanted-c.angle),Math.cos(wanted-c.angle));c.angle+=Math.max(-dt*6,Math.min(dt*6,delta));}
+      const targetSpeed=strength*MAX_SPEED,blend=1-Math.exp(-(strength>.06?6:12)*dt);
+      c.vx+=(Math.sin(c.angle)*targetSpeed-c.vx)*blend;c.vy+=(-Math.cos(c.angle)*targetSpeed-c.vy)*blend;
+      c.x+=c.vx*dt;c.y+=c.vy*dt;
+      if(c.x<0||c.y<0||c.x>=340||c.y>=340){fall(c);return;}
+      if(['drop','resolve','regrow'].includes(state)){
+        // inside now uses the SAME inset as rendering (pad=tileInset() in
+        // paintTiles), applied to every tile regardless of color. Previously
+        // the inside-check was skipped entirely for a target-colored tile, so
+        // the car was treated as safe anywhere in the full un-shrunk cell —
+        // up to 7px outside the visually rendered square at high rounds
+        // (looked like floating over the lagoon while still "safe"). Matching
+        // the hitbox to the render exactly removes that mismatch at any round.
+        const t=carTile(c),inset=tileInset();
+        const supported=t&&t.fallT<.15;
+        const inside=t&&c.x>=t.col*TILE+inset&&c.x<=(t.col+1)*TILE-inset&&c.y>=t.row*TILE+inset&&c.y<=(t.row+1)*TILE-inset;
+        if(!supported || !inside)fall(c);
       }
-
+      if(Math.hypot(c.vx,c.vy)>35&&Math.floor(simTime*30)!==c.trailFrame){c.trailFrame=Math.floor(simTime*30);trails.push({x:c.x,y:c.y,at:simTime,neon:c===car&&owned.trail_neon});}
+    }
+    function fall(c){
+      if(!c.alive)return;c.alive=false;c.fall=0;const p=project(c.x,c.y,70);sparkles.push({x:p.x,y:p.y,at:simTime+.3});
+      if(c===car){state='falling';stateTimer=0;releaseJoy();announceText.textContent='INTO THE LAGOON';countdownNumber.textContent='';countdownTrack.classList.remove('show');tone(240,.4,45);}
+      updateHeader();
+    }
+    function botDirection(b){
+      if(state==='announce')return{x:0,y:0};
+      if(!b.target && state==='move' && stateTimer>b.reaction*1000){const safe=tiles.filter(t=>t.colorIndex===targetColorIndex);safe.sort((a,c)=>Math.hypot(a.col*TILE+TILE/2-b.x,a.row*TILE+TILE/2-b.y)-Math.hypot(c.col*TILE+TILE/2-b.x,c.row*TILE+TILE/2-b.y));const t=safe[Math.random()<.15&&safe.length>1?1:0];b.target={x:t.col*TILE+TILE/2+(Math.random()-.5)*16,y:t.row*TILE+TILE/2+(Math.random()-.5)*16};}
+      if(!b.target)return{x:0,y:0};const dx=b.target.x-b.x,dy=b.target.y-b.y,d=Math.hypot(dx,dy);return d>7?{x:dx/d*Math.min(1,d/38),y:dy/d*Math.min(1,d/38)}:{x:0,y:0};
+    }
+    function step(dt){
+      if(state==='gameover')return;
+      simTime+=dt;
+      steer(car,joyDir,dt);bots.forEach(b=>steer(b,botDirection(b),dt));
+      const drivers=[car,...bots].filter(c=>c.alive);
+      for(let i=0;i<drivers.length;i++)for(let j=i+1;j<drivers.length;j++){
+        const a=drivers[i],b=drivers[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),min=CAR_R*1.55;
+        if(d<min){const nx=d>.001?dx/d:1,ny=d>.001?dy/d:0,push=(min-d)/2;a.x-=nx*push;a.y-=ny*push;b.x+=nx*push;b.y+=ny*push;const impulse=Math.max(0,((a.vx-b.vx)*nx+(a.vy-b.vy)*ny)*.65);a.vx-=nx*impulse;a.vy-=ny*impulse;b.vx+=nx*impulse;b.vy+=ny*impulse;}
+      }
+      trails=trails.filter(t=>simTime-t.at<.7);sparkles=sparkles.filter(t=>simTime-t.at<1);
       stateTimer += dt * 1000;
-
+      if(state==='falling'){
+        // Finish an already-started drop even when the player falls first.
+        tiles.forEach(t=>{if(t.colorIndex!==targetColorIndex&&t.fallT>0){t.fallT=Math.min(1,t.fallT+dt*1000/DROP_MS);t.alive=t.fallT<.15;}});
+        if(stateTimer>=700)onFell();return;
+      }
       if (state === 'announce') {
         if (stateTimer >= ANNOUNCE_MS) {
           state = 'move';
           stateTimer = 0;
-          announceEl.classList.remove('show');
+          tone(550);
           countdownTrack.classList.add('show');
         }
       } else if (state === 'move') {
         const dur = countdownForRound(round);
         const t = Math.min(1, stateTimer / dur);
         countdownFill.style.transform = `scaleX(${1 - t})`;
+        countdownNumber.textContent=((dur-stateTimer)/1000).toFixed(1);
+        const remaining=Math.ceil((dur-stateTimer)/1000);if(remaining<=3&&remaining!==lastBeep){lastBeep=remaining;tone(remaining===1?880:620,.08);}
         if (stateTimer >= dur) {
           state = 'drop';
           stateTimer = 0;
           countdownTrack.classList.remove('show');
+          announceText.textContent=`HOLD ${COLORS[targetColorIndex].name.toUpperCase()} ${shapeGlyph(COLORS[targetColorIndex].shape)}`;countdownNumber.textContent='';tone(100,.25,40);
           tiles.forEach((t2) => { if (t2.colorIndex !== targetColorIndex) t2.fallT = 0.0001; });
         }
       } else if (state === 'drop') {
-        let anyFalling = false;
         tiles.forEach((t2) => {
           if (t2.colorIndex !== targetColorIndex) {
             t2.fallT = Math.min(1, stateTimer / DROP_MS);
             if (t2.fallT >= 1) t2.alive = false;
-            anyFalling = true;
           }
         });
         if (stateTimer >= DROP_MS) {
@@ -566,23 +713,21 @@
         }
       } else if (state === 'resolve') {
         if (stateTimer >= RESOLVE_MS) {
-          const t2 = carTile();
-          if (t2 && t2.alive) {
+          if (car.alive) {
             state = 'regrow';
             stateTimer = 0;
+            announceText.textContent='SAFE. NICE ONE!';tone(880,.16);updateHeader();
           } else {
             onFell();
           }
         }
       } else if (state === 'regrow') {
-        tiles.forEach((t2) => { t2.alive = true; t2.fallT = 0; });
+        tiles.forEach((t2) => { if(t2.colorIndex!==targetColorIndex){t2.fallT=Math.max(0,1-stateTimer/REGROW_MS);t2.alive=t2.fallT<.15;} });
         if (stateTimer >= REGROW_MS) {
           startRound(round + 1);
         }
       }
 
-      render();
-      requestAnimationFrame(tick);
     }
 
     // --- joystick ---
@@ -599,7 +744,8 @@
       joyDir = { x: dx / maxR, y: dy / maxR };
     }
     joystickBase.addEventListener('pointerdown', (e) => {
-      if (paused) return;
+      if (paused || !started || anyOverlayOpen() || state==='gameover' || !car.alive || joyActive) return;
+      unlockSound();
       joyActive = true;
       joyPointerId = e.pointerId;
       try { joystickBase.setPointerCapture(e.pointerId); } catch (err) {}
@@ -611,16 +757,20 @@
     });
     function releaseJoy() {
       joyActive = false;
+      if(joyPointerId!==null&&joystickBase.hasPointerCapture(joyPointerId))joystickBase.releasePointerCapture(joyPointerId);
+      joyPointerId=null;
       joyDir = { x: 0, y: 0 };
       joystickKnob.style.transform = 'translate(-50%, -50%)';
     }
-    joystickBase.addEventListener('pointerup', releaseJoy);
+    joystickBase.addEventListener('pointerup', e=>{if(e.pointerId===joyPointerId)releaseJoy();});
     joystickBase.addEventListener('pointercancel', releaseJoy);
+    joystickBase.addEventListener('lostpointercapture', ()=>{if(joyActive)releaseJoy();});
 
     // --- game over actions ---
     continueBtn.addEventListener('click', async () => {
       continueBtn.disabled = true;
       continueBtn.textContent = 'Opening…';
+      try {
       const res = await vg.purchase('second_chance');
       if (res.ok || vg.devMode) {
         pendingContinueGranted = true;
@@ -632,24 +782,12 @@
         continueBtn.disabled = false;
         continueBtn.textContent = 'Continue — ₦100';
       }
+      } catch(err) {gameoverSub.textContent=err.code==='cancelled'?'Purchase cancelled. You can still play again for free.':'Purchase could not complete. Please try again.';}
+      finally{continueBtn.disabled=false;continueBtn.textContent='Continue — ₦100';}
     });
     endrunBtn.addEventListener('click', () => {
       gameoverEl.classList.remove('open');
-      usedContinueThisRun = false;
-      startRound(1);
-      car.x = CANVAS_SIZE / 2;
-      car.y = CANVAS_SIZE / 2;
-    });
-
-    // Dev mode's purchase shortcut always resolves productId to the generic
-    // 'dev_product' (the kit can't know which shop row you clicked without a
-    // real purchase sheet), so in dev mode just default to unlocking the trail
-    // for easy local testing. pendingContinueGranted for second_chance is set
-    // directly by the continue-button handler below instead, for both modes.
-    vg.onClaim((productId) => {
-      if (productId === 'trail_neon' || (vg.devMode && productId === 'dev_product')) owned.trail_neon = true;
-      if (productId === 'premium_car_pack') owned.premium_car_pack = true;
-      renderShop();
+      newRun(botsMode);
     });
 
     // --- shop ---
@@ -673,13 +811,18 @@
           btn.addEventListener('click', async () => {
             btn.disabled = true;
             btn.textContent = 'Opening…';
+            try {
             const res = await vg.purchase(item.id);
+            if(vg.devMode&&res.ok){owned[item.id]=true;renderShop();}
             if (!res.ok && !vg.devMode) { btn.disabled = false; btn.textContent = `₦${item.price}`; }
+            } catch(err) {btn.disabled=false;btn.textContent=`Retry · ₦${item.price}`;}
           });
         }
         row.appendChild(btn);
         shopRows.appendChild(row);
       });
+      const paints=document.getElementById('paint-options');paints.replaceChildren();
+      if(owned.premium_car_pack){['#f3d184',...BONUS_COLORS].forEach((hex,i)=>{const b=document.createElement('button');b.className='paint-choice';b.style.background=hex;b.setAttribute('aria-label',`Car paint ${i+1}`);b.setAttribute('aria-pressed',String(paintIndex===i-1));b.addEventListener('click',()=>{paintIndex=i-1;renderShop();render();});paints.appendChild(b);});}
     }
 
     document.getElementById('shop-btn').addEventListener('click', () => { renderShop(); shopOverlay.classList.add('open'); });
@@ -688,24 +831,47 @@
     });
     document.getElementById('leaderboard-btn').addEventListener('click', async () => {
       leaderboardSheet.classList.add('open');
+      leaderboardMe.textContent='Loading…';
+      try {
       const { top, me } = await vg.leaderboard();
       leaderboardList.innerHTML = '';
       (top || []).slice(0, 3).forEach((row, i) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>#${i + 1} ${row.name ?? row.playerId}</span><span>${row.score}</span>`;
+        li.textContent = `#${i + 1} ${row.name ?? row.playerId} — ${row.score}`;
         leaderboardList.appendChild(li);
       });
       leaderboardMe.textContent = me ? me.label : '';
+      if(!top?.length)leaderboardMe.textContent=vg.devMode?'Local practice · leaderboard is available in Lagos Life.':'No scores yet. Set the pace!';
+      }catch{leaderboardMe.textContent='Leaderboard unavailable. Try again shortly.';}
     });
     document.getElementById('close-leaderboard').addEventListener('click', () => leaderboardSheet.classList.remove('open'));
 
-    vg.onPause(() => { paused = true; joyDir = { x: 0, y: 0 }; });
-    vg.onResume(() => { paused = false; lastFrame = null; });
+    function newRun(withBots){
+      botsMode=withBots;started=true;usedContinueThisRun=false;pendingContinueGranted=false;
+      car={x:127.5,y:212.5,vx:0,vy:0,angle:0,alive:true,fall:0};
+      bots=withBots?[[42.5,127.5,'#dce8e6'],[212.5,127.5,'#ef898c'],[297.5,212.5,'#87d8d5']].map(([x,y,color])=>({x,y,color,vx:0,vy:0,angle:0,alive:true,fall:0})):[];
+      trails=[];sparkles=[];startOverlay.classList.remove('open');gameoverEl.classList.remove('open');releaseJoy();startRound(1);render();syncPause();unlockSound();
+    }
+    function syncPause(){
+      paused=sdkPaused||document.hidden||manualPaused||anyOverlayOpen();
+      releaseJoy();lastFrame=null;accumulator=0;
+      if(paused){cancelAnimationFrame(frameId);frameId=null;audio?.suspend();}
+      else if(started){if(audio&&!muted)audio.resume().catch(()=>{});if(frameId===null)frameId=requestAnimationFrame(tick);}
+    }
+    document.getElementById('solo-btn').addEventListener('click',()=>newRun(false));
+    document.getElementById('bots-btn').addEventListener('click',()=>newRun(true));
+    document.getElementById('pause-btn').addEventListener('click',()=>{manualPaused=true;pauseOverlay.classList.add('open');syncPause();});
+    document.getElementById('resume-btn').addEventListener('click',()=>{manualPaused=false;pauseOverlay.classList.remove('open');syncPause();});
+    document.getElementById('sound-btn').addEventListener('click',e=>{muted=!muted;e.currentTarget.textContent=muted?'Sound off':'Sound on';e.currentTarget.setAttribute('aria-pressed',String(muted));if(muted)audio?.suspend();else unlockSound();});
+    vg.onPause(()=>{sdkPaused=true;syncPause();});vg.onResume(()=>{sdkPaused=false;syncPause();});
+    document.addEventListener('visibilitychange',syncPause);
+    for(const overlay of [shopOverlay,leaderboardSheet,pauseOverlay,startOverlay])new MutationObserver(syncPause).observe(overlay,{attributes:true,attributeFilter:['class']});
 
     renderShop();
     startRound(1);
-    requestAnimationFrame(tick);
-  })();
+    render();
+    document.getElementById('solo-btn').disabled=false;document.getElementById('bots-btn').disabled=false;
+  })().catch(err=>{console.error(err);document.getElementById('start-status').textContent='Could not connect. Reload to try again.';});
   </script>
 </body>
 </html>

@@ -391,3 +391,12 @@ Open questions:
 ## Track progress here
 | Game | Status | Submitted | Approved | Notes |
 |------|--------|-----------|----------|-------|
+| tap-tap-lagos | Prior sandbox checklist passed (handoff report) | Not checked this session | Not checked this session | Unchanged in the 2026-10-12 Codex session. |
+| archery | Local polish implemented; Claude review pending | No new submission this session | No new approval this session | Previous version passed sandbox per handoff. New visuals, flight, audio and lifecycle changes tested locally. |
+| color-rush | Local solo + 3-bot prototype developed; Claude review pending | Not submitted this session | Not approved this session | Perspective arena, car movement/collisions, tile drops and replay. Real multiplayer not implemented. |
+
+### 2026-10-12 — Codex handover for Claude
+
+Read [CLAUDE-REVIEW.md](CLAUDE-REVIEW.md) before reviewing the local game changes. It lists the implementation, reference media, 31 passing local checks, reproduction commands and specific review gaps. `TRACKER.md` is an ignored local progress log; this section and the review note preserve the handover in versionable files.
+
+Work is currently uncommitted on `dev`; nothing was pushed or deployed. The shared kit, API, DB, portfolio, product definitions and deployment config were not modified. Local checks loaded the real SDK outside the iframe and used the kit's dev mode; they are not new evidence of live purchase verification or Vatar approval.

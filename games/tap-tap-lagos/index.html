@@ -214,9 +214,9 @@
       }
       render();
 
-      // Recover purchases paid but not delivered (e.g. after a reload mid-purchase).
-      await vg.recoverPendingPurchases();
-
+      // onClaim must be registered before recoverPendingPurchases() — it fires
+      // claim handlers synchronously for anything recovered, so registering
+      // after would silently miss purchases recovered on this load.
       vg.onClaim((productId) => {
         if (productId === 'double_taps' || vg.devMode) {
           hasDoubleTaps = true;
@@ -225,6 +225,9 @@
           render();
         }
       });
+
+      // Recover purchases paid but not delivered (e.g. after a reload mid-purchase).
+      await vg.recoverPendingPurchases();
 
       tapBtn.addEventListener('pointerdown', () => {
         if (paused) return;

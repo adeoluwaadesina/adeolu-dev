@@ -287,11 +287,52 @@
   #leaderboard-list { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
   #leaderboard-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .leaderboard-me { font-size: 12px; opacity: 0.75; text-align: center; margin: 0 0 12px; }
+  /* Range identity and a thumb-friendly instrument panel. */
+  body { background: #101e1b; }
+  #scene { background: #c8ddd3; }
+  #mountains, .tree, #lanes { display: none; }
+  #landscape, #effects { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #effects { z-index: 2; }
+  .hud { padding: max(20px, env(safe-area-inset-top)) 22px 14px; color: #203c36; }
+  .hud::before { content: ''; position: absolute; inset: 0 0 -55px; background: linear-gradient(#f6f3e7 20%,#f6f3e7e8 68%,transparent); z-index: 0; pointer-events: none; }
+  .hud > div { position: relative; }
+  .tier-name { font-family: Georgia,serif; font-size: 29px; font-weight: 500; text-shadow: none; }
+  .tier-name::before { content: 'LULUGAMES / LAGOS RANGE'; display: block; font: 9px -apple-system,sans-serif; letter-spacing: 2px; margin-bottom: 9px; }
+  .round-info { margin-top: 6px; text-shadow: none; font-size: 11px; }
+  .wind-box { padding-top: 23px; }
+  .wind-label, .wind-value { text-shadow: none; }
+  .wind-label { font-size: 9px; letter-spacing: 1.8px; }
+  .wind-value { font-size: 22px; }
+  .icon-row { top: 112px; left: 22px; right: 22px; gap: 6px; z-index: 3; }
+  .icon-btn { min-height: 44px; padding: 8px 11px; background: #f8f6ecdc; border: 1px solid #24453725; color: #244537; font-size: 11px; }
+  button { cursor: pointer; touch-action: manipulation; }
+  button:active { filter: brightness(.9); }
+  button:focus-visible { outline: 3px solid #dba94e; outline-offset: 3px; }
+  #target-canvas { filter: drop-shadow(3px 8px 4px #14281a55); }
+  .stand-leg { background: linear-gradient(90deg,#614025,#bf9563,#795330); height: 53px; bottom: -40px; border-radius: 2px; z-index: -1; }
+  #target-stand::after { content: ''; position: absolute; width: 90px; height: 10px; background: #142b2466; border-radius: 50%; bottom: -44px; left: 50%; transform: translateX(-50%); filter: blur(4px); z-index: -2; }
+  .distance-badge { bottom: 22px; left: 22px; background: #16352cc9; font: 11px monospace; padding: 9px 12px; border: 1px solid #f7f3e140; border-radius: 6px; }
+  .shot-result { top: 177px; z-index: 4; white-space: nowrap; font-size: 13px; background: #173b32ed; color: #fff4d1; padding: 10px 18px; }
+  #controls { padding: 17px 22px max(22px,env(safe-area-inset-bottom)); background: #162e27; border-top: 1px solid #f7e9b926; }
+  .draw-labels { display: flex; justify-content: space-between; color: #e9e6d4; font-size: 10px; letter-spacing: 1.6px; margin: 0 0 10px; }
+  #draw-label { color: #efcc79; letter-spacing: .5px; }
+  #charge-bar { height: 12px; overflow: visible; position: relative; background: #0c201b; }
+  #charge-bar::after { content: ''; position: absolute; left: 55%; width: 10%; top: -4px; bottom: -4px; border: 1px solid #ffefb1; border-radius: 3px; }
+  #charge-fill { border-radius: 4px; background: linear-gradient(90deg,#657f64,#e8c674 60%,#d87957); }
+  .hint { margin: 14px 0 0; font-size: 11px; line-height: 1.6; opacity: .8; }
+  .panel, #round-end, #leaderboard-sheet { background: #17352e; border: 1px solid #d2cdaa35; box-shadow: 0 15px 70px #0005; }
+  .panel-overlay { backdrop-filter: blur(5px); touch-action: pan-y; }
+  .row-btn { min-height: 44px; }
+  #shot-strip { position: absolute; bottom: 23px; right: 22px; display: flex; gap: 6px; z-index: 3; }
+  #shot-strip span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #16352cbf; border: 1px solid #f7f3e166; font: 12px monospace; }
+  @media (max-height: 650px) { .icon-row { top: 98px; } .shot-result { top: 148px; } #controls { padding-top: 10px; padding-bottom: 12px; } }
 </style>
 </head>
 <body>
   <div id="app">
     <div id="scene">
+      <canvas id="landscape" aria-hidden="true"></canvas>
+      <canvas id="effects" aria-hidden="true"></canvas>
       <svg id="mountains" viewBox="0 0 400 140" preserveAspectRatio="none">
         <polygon points="0,140 0,70 60,30 120,75 170,40 230,80 280,35 340,72 400,45 400,140" fill="#9fb7c9" opacity="0.65" />
         <polygon points="0,140 0,95 70,55 140,98 210,60 270,100 330,65 400,92 400,140" fill="#7e9aad" opacity="0.8" />
@@ -332,14 +373,17 @@
         <button class="icon-btn" id="ladder-btn">Ladder</button>
         <button class="icon-btn" id="shop-btn">Shop</button>
         <button class="icon-btn" id="leaderboard-btn">Leaderboard</button>
+        <button class="icon-btn" id="sound-btn" aria-pressed="false">Sound on</button>
       </div>
 
       <div class="shot-result" id="shot-result"></div>
+      <div id="shot-strip" aria-label="Arrow scores"><span>—</span><span>—</span><span>—</span></div>
     </div>
 
     <div id="controls">
-      <p class="hint">Hold &amp; drag anywhere to aim &middot; release to shoot</p>
+      <div class="draw-labels"><span>DRAW STRENGTH</span><span id="draw-label">Find the gold zone</span></div>
       <div id="charge-bar"><div id="charge-fill"></div></div>
+      <p class="hint">Hold &amp; drag to aim · release in the gold zone<br>Watch the wind. Steady hand, sharp eye.</p>
     </div>
   </div>
 
@@ -435,6 +479,102 @@
     let holdStartTime = 0;
     let holdRAF = null;
     let autoReleaseTimer = null;
+    let aimPointer = null;
+    let flight = null;
+    let particles = [];
+    let gameTime = 0;
+    let effectRAF = null;
+    let effectLast = null;
+    let jobs = [];
+    let sdkPaused = false;
+    let muted = false;
+    let audio = null;
+    let impactTime = -10;
+    let resultUntil = 0;
+    const landscape = document.getElementById('landscape');
+    const effects = document.getElementById('effects');
+    const fx = effects.getContext('2d');
+    const drawLabel = document.getElementById('draw-label');
+    let sceneWidth = 375, sceneHeight = 650;
+    const later = (fn, seconds) => jobs.push({ fn, at: gameTime + seconds });
+
+    function unlockSound() {
+      if (!audio) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) audio = new AC(); }
+      if (audio && !paused && !muted) audio.resume().catch(() => {});
+    }
+    function tone(frequency, duration, volume = .06, type = 'sine', end = frequency) {
+      if (!audio || muted || paused || audio.state !== 'running') return;
+      const osc = audio.createOscillator(), gain = audio.createGain(), at = audio.currentTime;
+      osc.type = type; osc.frequency.setValueAtTime(frequency, at); osc.frequency.exponentialRampToValueAtTime(Math.max(20,end), at + duration);
+      gain.gain.setValueAtTime(volume, at); gain.gain.exponentialRampToValueAtTime(.001, at + duration);
+      osc.connect(gain).connect(audio.destination); osc.start(at); osc.stop(at + duration);
+    }
+    document.getElementById('sound-btn').addEventListener('click', (e) => {
+      muted = !muted; e.currentTarget.textContent = muted ? 'Sound off' : 'Sound on'; e.currentTarget.setAttribute('aria-pressed', String(muted));
+      if (muted) audio?.suspend(); else unlockSound();
+    });
+
+    function paintLandscape() {
+      sceneWidth = scene.clientWidth; sceneHeight = scene.clientHeight;
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      for (const c of [landscape,effects]) { c.width = sceneWidth*dpr; c.height = sceneHeight*dpr; c.getContext('2d').setTransform(dpr,0,0,dpr,0,0); }
+      const c = landscape.getContext('2d'), w = sceneWidth, h = sceneHeight, horizon = h*.56;
+      let g = c.createLinearGradient(0,0,0,horizon); g.addColorStop(0,'#b4d8d5'); g.addColorStop(1,'#f4e9bd'); c.fillStyle = g; c.fillRect(0,0,w,h);
+      g=c.createRadialGradient(w*.76,h*.29,2,w*.76,h*.29,w*.5);g.addColorStop(0,'#fff5ccbb');g.addColorStop(1,'#fff5cc00');c.fillStyle=g;c.fillRect(0,0,w,horizon);
+      c.fillStyle='#fff7d7';c.beginPath();c.arc(w*.76,h*.29,22,0,Math.PI*2);c.fill();
+      // Hazy, faceted hills create depth without shipping a background image.
+      for(let layer=0;layer<3;layer++){
+        const base=horizon+layer*6, peaks=layer===0?[[-.1,.35],[.12,.14],[.3,.33],[.53,.23],[.69,.34],[.85,.18],[1.12,.39]]:[[-.1,.38],[.16,.30+layer*.025],[.42,.41],[.72,.31+layer*.04],[1.1,.4]];
+        c.fillStyle=['#aec5bc','#8fae9e','#789b85'][layer];c.beginPath();c.moveTo(-20,base);for(const [x,y] of peaks)c.lineTo(x*w,y*h);c.lineTo(w+20,base);c.fill();
+        for(let i=1;i<peaks.length-1;i+=2){const [x,y]=peaks[i];c.fillStyle=['#d2d8c4','#b6c5a6','#95ad8e'][layer];c.beginPath();c.moveTo(x*w,y*h);c.lineTo((x+.025)*w,y*h+35);c.lineTo((x+.12)*w,base);c.lineTo((x+.18)*w,base);c.fill();}
+      }
+      // Distant lagoon and layered tropical tree line, generated once per resize.
+      c.fillStyle='#8ab1a6';c.fillRect(0,horizon-35,w,55);
+      for(let layer=0;layer<3;layer++){c.fillStyle=['#91afa0','#6f9481','#4c7560'][layer];for(let i=0;i<24;i++){const x=i*w/22, y=horizon-22+layer*12+Math.sin(i*2.1)*9;c.beginPath();c.ellipse(x,y,20+layer*4,18+Math.sin(i)*6,0,0,Math.PI*2);c.fill();}}
+      g=c.createLinearGradient(0,horizon,0,h);g.addColorStop(0,'#799764');g.addColorStop(.6,'#456b44');g.addColorStop(1,'#203e2d');c.fillStyle=g;c.fillRect(0,horizon,w,h-horizon);
+      c.fillStyle='#b2b17430';c.beginPath();c.moveTo(w*.47,horizon);c.lineTo(w*.53,horizon);c.lineTo(w*.89,h);c.lineTo(w*.11,h);c.fill();
+      for(let i=0;i<480;i++){const z=((i*73)%479)/479, y=horizon+z*z*(h-horizon), x=((i*137.51)%w);c.strokeStyle=i%2?'#cad49428':'#16392340';c.lineWidth=.5+z;c.beginPath();c.moveTo(x,y);c.lineTo(x+Math.sin(i)*3*z,y-2-z*7);c.stroke();}
+      for(let i=0;i<11000;i++){const z=((i*71)%10999)/10999,y=horizon+z*(h-horizon),x=(i*97.319)%w;c.fillStyle=i%3===0?'#e1df8c16':i%3===1?'#a1ba7230':'#142f2327';c.fillRect(x,y,.5+z*1.5,.5+z*.8);}
+      for(const side of [-1,1]){c.strokeStyle='#eee9c28a';c.lineWidth=1.5;c.beginPath();c.moveTo(w*.5+side*w*.035,horizon);c.lineTo(w*.5+side*w*.45,h);c.stroke();
+        for(let i=1;i<5;i++){const z=i/5, y=horizon+z*z*(h-horizon), x=w*.5+side*(w*.045+z*z*w*.46);c.fillStyle='#624f34';c.fillRect(x,y-8-z*20,3+z*3,10+z*22);c.fillStyle='#d7d3ad';c.fillRect(x,y-8-z*20,3+z*3,4);}}
+      for(const [x,y,s] of [[w*.06,horizon,1],[w*.91,horizon+5,.8],[w*.18,horizon-8,.48]]){c.save();c.translate(x,y);c.scale(s,s);c.strokeStyle='#6d6546';c.lineWidth=7;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(-7,-65,4,-110);c.stroke();for(let i=0;i<7;i++){const a=i*Math.PI/3.5;c.strokeStyle=i%2?'#325e47':'#527a4f';c.lineWidth=5;c.beginPath();c.moveTo(4,-110);c.quadraticCurveTo(Math.cos(a)*34,-130+Math.sin(a)*15,Math.cos(a)*58,-103+Math.sin(a)*30);c.stroke();}c.restore();}
+      // Dense edge canopies frame the lane; seeded leaf placement stays still.
+      for(const [tx,ty,s] of [[w*.12,horizon+22,.75],[w*.91,horizon+40,.95],[-12,horizon+76,1.3],[w+17,horizon+115,1.4]]){
+        c.save();c.translate(tx,ty);c.scale(s,s);c.fillStyle='#142e2540';c.beginPath();c.ellipse(20,5,55,8,.1,0,Math.PI*2);c.fill();
+        c.strokeStyle='#534b32';c.lineWidth=7;c.beginPath();c.moveTo(0,0);c.lineTo(-4,-85);c.moveTo(-2,-40);c.lineTo(-30,-85);c.moveTo(-3,-60);c.lineTo(22,-106);c.stroke();
+        for(let i=0;i<500;i++){const a=i*2.399,r=Math.sqrt((i*37%499)/499)*51,x=Math.cos(a)*r,y=-90+Math.sin(a)*r*.9;const light=(1-(x+y+130)/160);c.fillStyle=`hsl(${92+i%19} 30% ${20+light*10+i%8}%)`;c.beginPath();c.ellipse(x,y,3+i%4,2+i%3,a,0,Math.PI*2);c.fill();}c.restore();
+      }
+      // Range marker and distant flags.
+      c.fillStyle='#e5dcc0';c.fillRect(w*.81,horizon+26,3,33);c.fillStyle='#d49c58';c.beginPath();c.moveTo(w*.81+3,horizon+26);c.lineTo(w*.81+24,horizon+30);c.lineTo(w*.81+3,horizon+38);c.fill();
+    }
+    function targetPoint(x,y) {
+      const box=canvas.getBoundingClientRect(), base=scene.getBoundingClientRect();
+      return {x:box.left-base.left+(170+x)/340*box.width,y:box.top-base.top+(170+y)/340*box.height};
+    }
+    function drawEffects() {
+      fx.clearRect(0,0,sceneWidth,sceneHeight);
+      const bx=sceneWidth*.5, by=sceneHeight-82, draw=aiming?power:0;
+      fx.save();fx.translate(bx,by);fx.rotate(-.08+aimX*.07);
+      fx.shadowColor='#071d2380';fx.shadowBlur=9;fx.strokeStyle=owned.bow_gold?'#e4bd58':'#b67a43';fx.lineWidth=9;fx.lineCap='round';
+      fx.beginPath();fx.moveTo(-92,-26);fx.bezierCurveTo(-70,35,70,35,92,-26);fx.stroke();fx.shadowBlur=0;
+      fx.strokeStyle=owned.bow_gold?'#fff0a5':'#e4bf83';fx.lineWidth=2;fx.stroke();
+      fx.strokeStyle='#eee5c9';fx.lineWidth=1.3;fx.beginPath();fx.moveTo(-92,-26);fx.lineTo(0,12+draw*38);fx.lineTo(92,-26);fx.stroke();
+      fx.fillStyle='#253b31';fx.fillRect(-12,13,24,10);
+      if(!flight){fx.strokeStyle='#e6dbbb';fx.lineWidth=2.5;fx.beginPath();fx.moveTo(0,25+draw*27);fx.lineTo(0,-57+draw*27);fx.stroke();fx.fillStyle='#d1dadd';fx.beginPath();fx.moveTo(0,-65+draw*27);fx.lineTo(-4,-53+draw*27);fx.lineTo(4,-53+draw*27);fx.fill();fx.fillStyle=owned.trail_flame?'#ed9155':'#faf2d3';fx.fillRect(-5,14+draw*27,10,12);}
+      fx.restore();
+      if(flight){const t=Math.min(1,(gameTime-flight.start)/flight.duration), end=targetPoint(flight.x,flight.y), start={x:bx,y:by-40};const x=start.x+(end.x-start.x)*t,y=start.y+(end.y-start.y)*t-70*4*t*(1-t);const previous=Math.max(0,t-.06),px=start.x+(end.x-start.x)*previous,py=start.y+(end.y-start.y)*previous-70*4*previous*(1-previous);fx.strokeStyle=owned.trail_flame?'#ffb866':'#fff6da';fx.lineWidth=3-t*2;fx.beginPath();fx.moveTo(px,py);fx.lineTo(x,y);fx.stroke();fx.fillStyle='#f8edd2';fx.beginPath();fx.arc(x,y,3-t*2,0,Math.PI*2);fx.fill();if(t>=1){const landed=flight;flight=null;landShot(landed);}}
+      for(const p of particles){const age=gameTime-p.at;if(age>.75)continue;fx.globalAlpha=1-age/.75;fx.fillStyle=p.color;fx.fillRect(p.x+p.vx*age,p.y+p.vy*age+95*age*age,2,2);}fx.globalAlpha=1;
+      particles=particles.filter(p=>gameTime-p.at<.75);
+      const shake=Math.max(0,1-(gameTime-impactTime)/.25);targetStand.style.marginLeft=`${Math.sin(gameTime*100)*shake*2}px`;
+    }
+    function effectTick(now) {
+      if(paused){effectRAF=null;return;}
+      const dt=effectLast===null?0:Math.min(.05,(now-effectLast)/1000);effectLast=now;gameTime+=dt;
+      const due=jobs.filter(j=>j.at<=gameTime);jobs=jobs.filter(j=>j.at>gameTime);due.forEach(j=>j.fn());
+      if(resultUntil && gameTime>resultUntil){shotResultEl.classList.remove('show');resultUntil=0;}
+      drawEffects();effectRAF=requestAnimationFrame(effectTick);
+    }
+    new ResizeObserver(paintLandscape).observe(scene);
 
     const vg = await VatarKit.init('archery');
     if (vg.devMode) console.log('[archery] dev mode, mock player');
@@ -448,8 +588,9 @@
     }
     currentTierIndex = unlockedTierIndex;
 
-    await vg.recoverPendingPurchases();
-
+    // onClaim must be registered before recoverPendingPurchases() — it fires
+    // claim handlers synchronously for anything recovered, so registering
+    // after would silently miss purchases recovered on this load.
     vg.onClaim((productId) => {
       if (productId in owned || vg.devMode) {
         if (vg.devMode) owned.bow_gold = true; else owned[productId] = true;
@@ -457,6 +598,8 @@
         renderLadder();
       }
     });
+
+    await vg.recoverPendingPurchases();
 
     function tierUnlocked(i) {
       return i <= unlockedTierIndex || (TIERS[i].id === 'expert' && owned.expert_unlock);
@@ -475,6 +618,8 @@
     }
 
     function startRound(tierIndex) {
+      cancelAim(); flight = null; jobs = []; particles = []; resultUntil = 0;
+      shotResultEl.classList.remove('show');
       currentTierIndex = tierIndex;
       arrowsShot = 0;
       roundScores = [];
@@ -488,6 +633,7 @@
       applyTierVisuals(TIERS[tierIndex]);
       updateHeader();
       render();
+      document.querySelectorAll('#shot-strip span').forEach(el => el.textContent = '—');
     }
 
     function updateHeader() {
@@ -510,12 +656,14 @@
       ctx.arc(cx, cy, R + 14, 0, Math.PI * 2);
       ctx.fillStyle = '#caa06a';
       ctx.fill();
+      for(let n=0;n<12;n++){ctx.strokeStyle=n%2?'#78543255':'#e9c59588';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R+3+n,0,Math.PI*2);ctx.stroke();}
 
       for (let i = 10; i >= 1; i--) {
         ctx.beginPath();
         ctx.arc(cx, cy, (R * i) / 10, 0, Math.PI * 2);
         ctx.fillStyle = RING_COLORS[i - 1];
         ctx.fill();
+        ctx.strokeStyle='rgba(27,29,20,.3)';ctx.lineWidth=.8;ctx.stroke();
       }
       ctx.lineWidth = 2;
       ctx.strokeStyle = 'rgba(0,0,0,0.25)';
@@ -616,29 +764,52 @@
     }
 
     function showShotResult(score) {
-      shotResultEl.textContent = score === 0 ? 'Miss!' : `+${score}`;
+      shotResultEl.textContent = score === 10 ? 'BULLSEYE · +10' : score === 0 ? 'Just wide. Adjust your aim.' : score >= 8 ? `Sharp shot! +${score}` : `On target · +${score}`;
       shotResultEl.classList.add('show');
-      setTimeout(() => shotResultEl.classList.remove('show'), 700);
+      resultUntil = gameTime + 1.4;
     }
 
     function shoot() {
-      if (paused || arrowsShot >= ARROWS_PER_ROUND) return;
+      if (paused || flight || arrowsShot >= ARROWS_PER_ROUND) return;
       const tier = TIERS[currentTierIndex];
       const R = tier.targetRadius;
 
-      const windDrift = wind.speed * wind.dir * 9 + (Math.random() * 8 - 4);
+      const windDrift = wind.speed * wind.dir * 9;
       const powerError = IDEAL_POWER - power;
-      const dropOffset = powerError * 240 + (Math.random() * 8 - 4);
+      const dropOffset = powerError * 240;
 
       const landX = aimX * R * 1.4 + windDrift;
       const landY = aimY * R * 1.4 + dropOffset;
       const jitter = (Math.random() * 0.6 - 0.3);
-      landedShots.push({ x: landX, y: landY, jitter });
-
       const dist = Math.hypot(landX, landY);
       const score = scoreForDistance(dist, R);
+      flight = {x:landX,y:landY,jitter,score,start:gameTime,duration:.42+tier.distanceFt*.004};
+      // Belt-and-braces, same reasoning as the draw/release auto-timer:
+      // flight normally resolves inside drawEffects() via effectTick's rAF
+      // loop, but rAF can stall when backgrounded/throttled. This setTimeout
+      // force-resolves the shot if that happens, so the player never gets
+      // stuck on "Arrow in flight".
+      const thisFlight = flight;
+      setTimeout(() => {
+        if (flight === thisFlight) { flight = null; landShot(thisFlight); }
+      }, thisFlight.duration * 1000 + 250);
+      tone(260,.19,.06,'triangle',65);
+      power=0;chargeFill.style.transform='scaleX(0)';drawLabel.textContent='Arrow in flight';render();
+    }
+
+    function landShot(shot) {
+      const {score,x:landX,y:landY,jitter}=shot;
+      const tier=TIERS[currentTierIndex];
+      if(score>0) landedShots.push({x:landX,y:landY,jitter});
+      impactTime=gameTime;
+      tone(score ? 130 : 65,.13,.1,'triangle',40);
+      if(score>=8){tone(score===10?880:660,.25,.04);later(()=>tone(score===10?1320:880,.3,.03),.1);}
+      const hit=targetPoint(landX,landY);
+      for(let i=0;i<(score===10?28:12);i++){const a=i*2.399;particles.push({x:hit.x,y:hit.y,vx:Math.cos(a)*(25+i*2),vy:Math.sin(a)*(25+i*2)-30,color:score>=8?'#ffe1a0':'#e0cda3',at:gameTime});}
       roundScores.push(score);
       arrowsShot += 1;
+      document.querySelectorAll('#shot-strip span')[arrowsShot-1].textContent=String(score);
+      drawLabel.textContent='Find the gold zone';
       showShotResult(score);
       lastPop = { x: landX, y: landY, text: score === 0 ? 'Miss!' : `+${score}` };
 
@@ -648,7 +819,7 @@
       updateHeader();
 
       if (arrowsShot >= ARROWS_PER_ROUND) {
-        setTimeout(finishRound, 750);
+        later(finishRound, .9);
       } else {
         wind = newWind(tier);
         updateHeader();
@@ -663,15 +834,14 @@
       if (total > bestRoundTotal) {
         bestRoundTotal = total;
         if (bestRoundTotal !== lastSubmittedScore) {
-          lastSubmittedScore = bestRoundTotal;
-          await vg.submitScore(bestRoundTotal);
+          try { await vg.submitScore(bestRoundTotal); lastSubmittedScore = bestRoundTotal; } catch (err) { console.warn('[archery] score not submitted',err.code); }
         }
       }
 
       if (passed && currentTierIndex === unlockedTierIndex && unlockedTierIndex < TIERS.length - 1) {
         unlockedTierIndex += 1;
       }
-      await vg.saveGame({ unlockedTierIndex, bestRoundTotal });
+      vg.saveGame({ unlockedTierIndex, bestRoundTotal }).catch(() => console.warn('[archery] save unavailable'));
 
       roundEndTitle.textContent = passed ? 'Tier cleared!' : 'Round over';
       const nextTier = TIERS[currentTierIndex + 1];
@@ -704,6 +874,7 @@
       const elapsed = performance.now() - holdStartTime;
       power = Math.min(1, elapsed / CHARGE_MS);
       chargeFill.style.transform = `scaleX(${power})`;
+      drawLabel.textContent = power >= .55 && power <= .65 ? 'PERFECT · release!' : power > .65 ? 'Too strong · aim lower' : 'Drawing…';
       render();
       if (elapsed >= MAX_HOLD_MS) {
         endAim();
@@ -718,6 +889,9 @@
       if (holdRAF) cancelAnimationFrame(holdRAF);
       if (autoReleaseTimer) { clearTimeout(autoReleaseTimer); autoReleaseTimer = null; }
       const heldMs = performance.now() - holdStartTime;
+      power = Math.min(1, heldMs / CHARGE_MS);
+      if(aimPointer!==null && scene.hasPointerCapture(aimPointer)) scene.releasePointerCapture(aimPointer);
+      aimPointer=null;
       if (heldMs < 60) {
         // too quick to count as a real draw — cancel without firing
         power = 0;
@@ -738,9 +912,10 @@
     }
 
     scene.addEventListener('pointerdown', (e) => {
-      if (paused || arrowsShot >= ARROWS_PER_ROUND || anyOverlayOpen()) return;
+      if (paused || aiming || flight || arrowsShot >= ARROWS_PER_ROUND || anyOverlayOpen()) return;
       if (isInteractiveTarget(e.target)) return;
       aiming = true;
+      aimPointer=e.pointerId;unlockSound();
       lastPop = null;
       aimAnchorX = e.clientX;
       aimAnchorY = e.clientY;
@@ -752,14 +927,20 @@
       chargeTick();
     });
     scene.addEventListener('pointermove', (e) => {
-      if (!aiming) return;
+      if (!aiming || e.pointerId !== aimPointer) return;
       const dx = e.clientX - aimAnchorX;
       const dy = e.clientY - aimAnchorY;
       aimX = Math.max(-1, Math.min(1, dx / AIM_RANGE_PX));
       aimY = Math.max(-1, Math.min(1, dy / AIM_RANGE_PX));
     });
-    scene.addEventListener('pointerup', endAim);
-    scene.addEventListener('pointercancel', endAim);
+    scene.addEventListener('pointerup', e => { if(e.pointerId===aimPointer)endAim(); });
+    scene.addEventListener('pointercancel', cancelAim);
+    scene.addEventListener('lostpointercapture', () => { if(aiming)cancelAim(); });
+    function cancelAim() {
+      aiming=false;cancelAnimationFrame(holdRAF);clearTimeout(autoReleaseTimer);autoReleaseTimer=null;
+      if(aimPointer!==null && scene.hasPointerCapture(aimPointer))scene.releasePointerCapture(aimPointer);
+      aimPointer=null;power=0;aimX=0;aimY=0;chargeFill.style.transform='scaleX(0)';drawLabel.textContent='Find the gold zone';
+    }
 
     // --- ladder panel ---
     function renderLadder() {
@@ -814,11 +995,14 @@
           btn.addEventListener('click', async () => {
             btn.disabled = true;
             btn.textContent = 'Opening…';
+            try {
             const res = await vg.purchase(item.id);
+            if(vg.devMode&&res.ok){owned[item.id]=true;renderShop();renderLadder();}
             if (!res.ok && !vg.devMode) {
               btn.disabled = false;
               btn.textContent = `₦${item.price}`;
             }
+            } catch(err){btn.disabled=false;btn.textContent=`Retry · ₦${item.price}`;}
           });
         }
         row.appendChild(btn);
@@ -842,38 +1026,38 @@
 
     document.getElementById('leaderboard-btn').addEventListener('click', async () => {
       leaderboardSheet.classList.add('open');
+      leaderboardMe.textContent='Loading…';
+      try {
       const { top, me } = await vg.leaderboard();
       leaderboardList.innerHTML = '';
       (top || []).slice(0, 3).forEach((row, i) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>#${i + 1} ${row.name ?? row.playerId}</span><span>${row.score}</span>`;
+        li.textContent = `#${i + 1} ${row.name ?? row.playerId} — ${row.score}`;
         leaderboardList.appendChild(li);
       });
       leaderboardMe.textContent = me ? me.label : '';
+      if(!top?.length)leaderboardMe.textContent=vg.devMode?'Local practice · leaderboard is available in Lagos Life.':'No scores yet. Take the first shot!';
+      }catch{leaderboardMe.textContent='Leaderboard unavailable. Try again shortly.';}
     });
     document.getElementById('close-leaderboard').addEventListener('click', () => {
       leaderboardSheet.classList.remove('open');
     });
 
-    vg.onPause(() => {
-      paused = true;
-      if (aiming) {
-        aiming = false;
-        if (holdRAF) cancelAnimationFrame(holdRAF);
-        if (autoReleaseTimer) { clearTimeout(autoReleaseTimer); autoReleaseTimer = null; }
-        power = 0;
-        aimX = 0;
-        aimY = 0;
-        chargeFill.style.transform = 'scaleX(0)';
-        render();
-      }
-    });
-    vg.onResume(() => { paused = false; });
+    function syncPause() {
+      paused=sdkPaused || document.hidden || ladderOverlay.classList.contains('open') || shopOverlay.classList.contains('open') || leaderboardSheet.classList.contains('open');
+      if(paused){cancelAim();cancelAnimationFrame(effectRAF);effectRAF=null;audio?.suspend();render();}
+      else {effectLast=null;if(!muted && audio)audio.resume().catch(()=>{});if(effectRAF===null)effectRAF=requestAnimationFrame(effectTick);}
+    }
+    vg.onPause(() => {sdkPaused=true;syncPause();});
+    vg.onResume(() => {sdkPaused=false;syncPause();});
+    document.addEventListener('visibilitychange',syncPause);
+    for(const overlay of [ladderOverlay,shopOverlay,leaderboardSheet])new MutationObserver(syncPause).observe(overlay,{attributes:true,attributeFilter:['class']});
 
     renderLadder();
     renderShop();
     startRound(currentTierIndex);
-  })();
+    paintLandscape();syncPause();
+  })().catch(err => { console.error(err); document.getElementById('shot-result').textContent='Could not connect. Reload to try again.';document.getElementById('shot-result').classList.add('show'); });
   </script>
 </body>
 </html>
