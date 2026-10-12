@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/games/:path*",
+      "destination": "https://vatar-games-studio.vercel.app/:path*"
+    }
+  ]
+}
