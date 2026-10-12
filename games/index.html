@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vatar Games — Adeoluwa Adesina</title>
+<meta name="description" content="HTML5 games built for the Vatar Games platform inside Lagos Life." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #fcfbf9;
+    --ink: #14151a;
+    --ink-soft: #5b5d66;
+    --ink-faint: #93949c;
+    --line: #e6e4dd;
+    --accent: #3355ff;
+    --status-progress: #b4740a;
+    --font-display: "Newsreader", Georgia, serif;
+    --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --wrap: 780px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.5;
+  }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+  header { padding: 32px 0 16px; border-bottom: 1px solid var(--line); }
+  .back { font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+  main { padding: 56px 0 80px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); margin: 0 0 12px; }
+  h1 { font-family: var(--font-display); font-size: 40px; font-weight: 500; margin: 0 0 16px; }
+  .lede { color: var(--ink-soft); font-size: 17px; max-width: 56ch; margin: 0 0 48px; }
+  .roster { display: grid; gap: 16px; }
+  .slot {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .slot-name { font-family: var(--font-display); font-size: 18px; }
+  .slot-status { font-family: var(--font-mono); font-size: 12px; color: var(--status-progress); white-space: nowrap; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="back" href="/">&larr; adeoluwa.dev</a>
+    </div>
+  </header>
+  <main>
+    <div class="wrap">
+      <p class="eyebrow">vatar games studio</p>
+      <h1>Games built for Lagos Life.</h1>
+      <p class="lede">
+        A small studio shipping original HTML5 games for the Vatar Games
+        platform inside Lagos Life. Nothing is live here yet — first title
+        is in the sandbox.
+      </p>
+      <div class="roster">
+        <div class="slot">
+          <span class="slot-name">Archery</span>
+          <span class="slot-status">in progress</span>
+        </div>
+        <div class="slot">
+          <span class="slot-name">Color Rush</span>
+          <span class="slot-status">up next</span>
+        </div>
+        <div class="slot">
+          <span class="slot-name">Dispatch Rider</span>
+          <span class="slot-status">up next</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
