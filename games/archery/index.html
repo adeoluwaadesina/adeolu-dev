@@ -425,10 +425,12 @@
     let landedShots = [];
     let wind = { speed: 0, dir: 1 };
     let aimX = 0; // -1..1 relative to target radius
+    let aimY = 0; // -1..1 relative to target radius
     let power = 0; // 0..1
     let lastSubmittedScore = 0;
     let aiming = false;
     let aimAnchorX = 0;
+    let aimAnchorY = 0;
     let holdStartTime = 0;
     let holdRAF = null;
     let autoReleaseTimer = null;
@@ -477,6 +479,7 @@
       roundScores = [];
       landedShots = [];
       aimX = 0;
+      aimY = 0;
       power = 0;
       wind = newWind(TIERS[tierIndex]);
       roundEndEl.classList.remove('open');
@@ -518,13 +521,14 @@
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
 
-      // reticle preview, offset by current aim — outlined so it reads against every ring color
+      // reticle preview, offset by current aim (both axes) — outlined so it reads against every ring color
       const reticleX = cx + aimX * R * 1.4;
+      const reticleY = cy + aimY * R * 1.4;
       ctx.beginPath();
-      ctx.moveTo(reticleX - 11, cy);
-      ctx.lineTo(reticleX + 11, cy);
-      ctx.moveTo(reticleX, cy - 11);
-      ctx.lineTo(reticleX, cy + 11);
+      ctx.moveTo(reticleX - 11, reticleY);
+      ctx.lineTo(reticleX + 11, reticleY);
+      ctx.moveTo(reticleX, reticleY - 11);
+      ctx.lineTo(reticleX, reticleY + 11);
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(0,0,0,0.7)';
       ctx.stroke();
@@ -535,7 +539,7 @@
       // charge/timer ring while holding to aim
       if (aiming) {
         ctx.beginPath();
-        ctx.arc(reticleX, cy, 24, -Math.PI / 2, -Math.PI / 2 + power * Math.PI * 2);
+        ctx.arc(reticleX, reticleY, 24, -Math.PI / 2, -Math.PI / 2 + power * Math.PI * 2);
         ctx.lineWidth = 4;
         ctx.strokeStyle = power >= 1 ? '#ff5a3c' : '#ffffff';
         ctx.stroke();
@@ -575,7 +579,7 @@
       const dropOffset = powerError * 240 + (Math.random() * 8 - 4);
 
       const landX = aimX * R * 1.4 + windDrift;
-      const landY = dropOffset;
+      const landY = aimY * R * 1.4 + dropOffset;
       landedShots.push({ x: landX, y: landY });
 
       const dist = Math.hypot(landX, landY);
@@ -664,6 +668,7 @@
         // too quick to count as a real draw — cancel without firing
         power = 0;
         aimX = 0;
+        aimY = 0;
         chargeFill.style.transform = 'scaleX(0)';
         render();
         return;
@@ -683,6 +688,7 @@
       if (isInteractiveTarget(e.target)) return;
       aiming = true;
       aimAnchorX = e.clientX;
+      aimAnchorY = e.clientY;
       holdStartTime = performance.now();
       try { scene.setPointerCapture(e.pointerId); } catch (err) {}
       // belt-and-braces: setTimeout still fires even if rAF is throttled
@@ -693,7 +699,9 @@
     scene.addEventListener('pointermove', (e) => {
       if (!aiming) return;
       const dx = e.clientX - aimAnchorX;
+      const dy = e.clientY - aimAnchorY;
       aimX = Math.max(-1, Math.min(1, dx / AIM_RANGE_PX));
+      aimY = Math.max(-1, Math.min(1, dy / AIM_RANGE_PX));
     });
     scene.addEventListener('pointerup', endAim);
     scene.addEventListener('pointercancel', endAim);
@@ -800,6 +808,7 @@
         if (autoReleaseTimer) { clearTimeout(autoReleaseTimer); autoReleaseTimer = null; }
         power = 0;
         aimX = 0;
+        aimY = 0;
         chargeFill.style.transform = 'scaleX(0)';
         render();
       }
