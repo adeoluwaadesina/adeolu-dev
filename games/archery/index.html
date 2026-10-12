@@ -524,10 +524,11 @@
       ctx.stroke();
 
       // scoring-ring numbers along the right side, like a real target face
+      // (every other ring only — labeling all 9 is too cramped at this display size)
       ctx.font = 'bold 12px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      for (let s = 1; s <= 9; s++) {
+      for (let s = 1; s <= 9; s += 2) {
         const r = (R * (11 - s)) / 10;
         const lx = cx + r - 8;
         ctx.lineWidth = 3;
@@ -602,9 +603,9 @@
         ctx.textBaseline = 'middle';
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-        ctx.strokeText(lastPop.text, cx + lastPop.x, cy + lastPop.y - 20);
+        ctx.strokeText(lastPop.text, cx + lastPop.x, cy + lastPop.y - 34);
         ctx.fillStyle = lastPop.text === 'Miss!' ? '#ffffff' : '#f6c453';
-        ctx.fillText(lastPop.text, cx + lastPop.x, cy + lastPop.y - 20);
+        ctx.fillText(lastPop.text, cx + lastPop.x, cy + lastPop.y - 34);
       }
     }
 
