@@ -1,0 +1,23 @@
+[
+  {
+    "id": "trail_neon",
+    "name": "Neon Trail",
+    "description": "Your car leaves a glowing neon trail.",
+    "priceNaira": 200,
+    "type": "one_off"
+  },
+  {
+    "id": "second_chance",
+    "name": "Second Chance",
+    "description": "Respawn right where you fell, once per run.",
+    "priceNaira": 100,
+    "type": "consumable"
+  },
+  {
+    "id": "premium_car_pack",
+    "name": "Premium Car Pack",
+    "description": "Unlocks five extra car colors.",
+    "priceNaira": 500,
+    "type": "one_off"
+  }
+]

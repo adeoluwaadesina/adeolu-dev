@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Color Rush</title>
+<meta name="description" content="Dodge onto the called color before the floor drops. How many rounds can you survive?" />
+<style>
+  :root {
+    --sky-top: #241a3d;
+    --sky-bottom: #4a2e6e;
+    --gold: #f6c453;
+    --paper: #fdf8ef;
+    --panel: rgba(16, 24, 32, 0.94);
+    --danger: #d94c3a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+    color: var(--paper);
+    touch-action: none;
+    user-select: none;
+  }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: env(safe-area-inset-top, 14px) 16px 0;
+  }
+  .title { font-weight: 800; font-size: 24px; }
+  .subinfo { opacity: 0.85; font-size: 12px; }
+  .icon-row { display: flex; justify-content: flex-end; gap: 10px; padding: 8px 16px 0; }
+  .icon-btn {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--paper);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  #scene-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 10px;
+  }
+  #grid-canvas { max-width: 100%; max-height: 100%; }
+
+  .announce {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.55);
+    border-radius: 14px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .announce.show { opacity: 1; }
+  .announce-swatch { width: 20px; height: 20px; border-radius: 5px; }
+  .announce-text { font-weight: 800; font-size: 16px; letter-spacing: 0.03em; }
+
+  #countdown-track {
+    position: absolute;
+    top: 56px;
+    left: 20%;
+    right: 20%;
+    height: 6px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 3px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  #countdown-track.show { opacity: 1; }
+  #countdown-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--gold);
+    transform-origin: left;
+    transform: scaleX(1);
+  }
+
+  #joystick-wrap {
+    padding: 4px 0 calc(env(safe-area-inset-bottom, 10px) + 14px);
+    display: flex;
+    justify-content: center;
+  }
+  #joystick-base {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.15);
+    position: relative;
+  }
+  #joystick-knob {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--gold);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .panel-overlay.open { display: flex; }
+  .panel {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 22px;
+    width: min(92vw, 420px);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .panel h2 { margin: 0 0 14px; font-size: 18px; }
+  .panel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .panel-row:last-child { border-bottom: none; }
+  .row-name { font-size: 14px; }
+  .row-sub { font-size: 11px; opacity: 0.6; }
+  .row-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--gold);
+    color: #1a1a1a;
+  }
+  .row-btn[disabled] { opacity: 0.5; background: rgba(255,255,255,0.15); color: var(--paper); }
+  .close-panel {
+    width: 100%;
+    margin-top: 12px;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(255,255,255,0.1);
+    color: var(--paper);
+    font-size: 14px;
+  }
+
+  #gameover {
+    position: fixed;
+    inset: auto 16px 16px 16px;
+    max-width: 448px;
+    margin: 0 auto;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 20px;
+    display: none;
+    z-index: 11;
+  }
+  #gameover.open { display: block; }
+  #gameover h2 { margin: 0 0 6px; font-size: 18px; }
+  #gameover p { margin: 0 0 16px; opacity: 0.8; font-size: 13px; }
+  #gameover .btn-row { display: flex; gap: 10px; }
+  #gameover button {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  #continue-btn { background: var(--gold); color: #1a1a1a; }
+  #endrun-btn { background: rgba(255,255,255,0.12); color: var(--paper); }
+
+  #leaderboard-sheet {
+    position: fixed;
+    inset: auto 0 0 0;
+    background: var(--panel);
+    border-top: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px 18px 0 0;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
+    max-width: 480px;
+    margin: 0 auto;
+    z-index: 12;
+  }
+  #leaderboard-sheet.open { transform: translateY(0); }
+  #leaderboard-sheet h2 { margin: 0 0 14px; font-size: 18px; }
+  #leaderboard-list { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+  #leaderboard-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .leaderboard-me { font-size: 12px; opacity: 0.75; text-align: center; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div>
+        <div class="title">Color Rush</div>
+        <div class="subinfo" id="round-info">Round 1 &middot; Best 0</div>
+      </div>
+    </header>
+    <div class="icon-row">
+      <button class="icon-btn" id="shop-btn">Shop</button>
+      <button class="icon-btn" id="leaderboard-btn">Leaderboard</button>
+    </div>
+
+    <div id="scene-wrap">
+      <canvas id="grid-canvas" width="340" height="340"></canvas>
+      <div class="announce" id="announce">
+        <div class="announce-swatch" id="announce-swatch"></div>
+        <div class="announce-text" id="announce-text">RED</div>
+      </div>
+      <div id="countdown-track"><div id="countdown-fill"></div></div>
+    </div>
+
+    <div id="joystick-wrap">
+      <div id="joystick-base">
+        <div id="joystick-knob"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameover">
+    <h2 id="gameover-title">You fell!</h2>
+    <p id="gameover-sub"></p>
+    <div class="btn-row">
+      <button id="continue-btn">Continue &mdash; &#8358;100</button>
+      <button id="endrun-btn">End run</button>
+    </div>
+  </div>
+
+  <div class="panel-overlay" id="shop-overlay">
+    <div class="panel">
+      <h2>Shop</h2>
+      <div id="shop-rows"></div>
+      <button class="close-panel" data-close="shop-overlay">Close</button>
+    </div>
+  </div>
+
+  <div id="leaderboard-sheet">
+    <h2>Top Survivors</h2>
+    <ol id="leaderboard-list"></ol>
+    <p class="leaderboard-me" id="leaderboard-me"></p>
+    <button class="close-panel" id="close-leaderboard">Close</button>
+  </div>
+
+  <script src="https://lagoslife.app/sdk/vatar-games-v1.js"></script>
+  <script src="/kit/vatar-helpers.js"></script>
+  <script>
+  (async function () {
+    const COLORS = [
+      { name: 'Red', hex: '#d94c3a', shape: 'circle' },
+      { name: 'Blue', hex: '#3a6fd9', shape: 'square' },
+      { name: 'Green', hex: '#3a9d4f', shape: 'triangle' },
+      { name: 'Yellow', hex: '#f6c453', shape: 'diamond' },
+      { name: 'Purple', hex: '#9b59b6', shape: 'star' },
+      { name: 'Orange', hex: '#e67e22', shape: 'plus' },
+    ];
+    const BONUS_COLORS = ['#ff6ec7', '#2ecfe0', '#c4ff4d', '#ff9f4d', '#9dff8f'];
+    const GRID_N = 4;
+    const CANVAS_SIZE = 340;
+    const TILE = CANVAS_SIZE / GRID_N;
+    const CAR_R = 16;
+    const MAX_SPEED = 220; // px/sec
+    const ANNOUNCE_MS = 950;
+    const DROP_MS = 380;
+    const RESOLVE_MS = 150;
+    const REGROW_MS = 320;
+
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+    const roundInfoEl = document.getElementById('round-info');
+    const announceEl = document.getElementById('announce');
+    const announceSwatch = document.getElementById('announce-swatch');
+    const announceText = document.getElementById('announce-text');
+    const countdownTrack = document.getElementById('countdown-track');
+    const countdownFill = document.getElementById('countdown-fill');
+    const joystickBase = document.getElementById('joystick-base');
+    const joystickKnob = document.getElementById('joystick-knob');
+    const gameoverEl = document.getElementById('gameover');
+    const gameoverTitle = document.getElementById('gameover-title');
+    const gameoverSub = document.getElementById('gameover-sub');
+    const continueBtn = document.getElementById('continue-btn');
+    const endrunBtn = document.getElementById('endrun-btn');
+    const shopOverlay = document.getElementById('shop-overlay');
+    const shopRows = document.getElementById('shop-rows');
+    const leaderboardSheet = document.getElementById('leaderboard-sheet');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const leaderboardMe = document.getElementById('leaderboard-me');
+
+    let paused = false;
+    let bestRounds = 0;
+    let lastSubmittedScore = 0;
+    let owned = { trail_neon: false, premium_car_pack: false };
+    let usedContinueThisRun = false;
+    let pendingContinueGranted = false; // set true when a second_chance purchase just succeeded
+
+    let round = 1;
+    let state = 'announce'; // announce -> move -> drop -> resolve -> regrow -> (loop) | gameover
+    let stateTimer = 0;
+    let targetColorIndex = 0;
+    let tiles = []; // {col,row,colorIndex,alive,fallT}
+    let car = { x: CANVAS_SIZE / 2, y: CANVAS_SIZE / 2 };
+    let joyDir = { x: 0, y: 0 };
+    let joyActive = false;
+    let lastFrame = null;
+
+    const vg = await VatarKit.init('color-rush');
+    if (vg.devMode) console.log('[color-rush] dev mode, mock player');
+
+    const restored = await vg.restoreOwned();
+    (restored.owned || []).forEach((id) => { if (id in owned) owned[id] = true; });
+    if (restored.save && typeof restored.save.bestRounds === 'number') {
+      bestRounds = restored.save.bestRounds;
+      lastSubmittedScore = bestRounds;
+    }
+    await vg.recoverPendingPurchases();
+
+    function colorCountForRound(r) {
+      return Math.min(COLORS.length, 3 + Math.floor((r - 1) / 4));
+    }
+    function countdownForRound(r) {
+      return Math.max(1500, 4000 - (r - 1) * 120);
+    }
+
+    function carColorHex() {
+      return owned.trail_neon ? '#39ff9e' : '#f6c453';
+    }
+
+    function newRoundTiles(r) {
+      const n = colorCountForRound(r);
+      const arr = [];
+      for (let row = 0; row < GRID_N; row++) {
+        for (let col = 0; col < GRID_N; col++) {
+          arr.push({ col, row, colorIndex: Math.floor(Math.random() * n), alive: true, fallT: 0 });
+        }
+      }
+      const target = Math.floor(Math.random() * n);
+      if (!arr.some((t) => t.colorIndex === target)) {
+        arr[Math.floor(Math.random() * arr.length)].colorIndex = target;
+      }
+      return { tiles: arr, target, colorCount: n };
+    }
+
+    function startRound(r) {
+      round = r;
+      const gen = newRoundTiles(r);
+      tiles = gen.tiles;
+      targetColorIndex = gen.target;
+      state = 'announce';
+      stateTimer = 0;
+      announceSwatch.style.background = COLORS[targetColorIndex].hex;
+      announceText.textContent = `${COLORS[targetColorIndex].name.toUpperCase()} ${shapeGlyph(COLORS[targetColorIndex].shape)}`;
+      announceEl.classList.add('show');
+      countdownTrack.classList.remove('show');
+      updateHeader();
+    }
+
+    function shapeGlyph(shape) {
+      return { circle: '●', square: '■', triangle: '▲', diamond: '◆', star: '★', plus: '✚' }[shape] || '';
+    }
+
+    function updateHeader() {
+      roundInfoEl.textContent = `Round ${round} · Best ${bestRounds}`;
+    }
+
+    function drawShape(cx, cy, size, shape, color) {
+      ctx.fillStyle = color;
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 1;
+      switch (shape) {
+        case 'circle':
+          ctx.beginPath(); ctx.arc(cx, cy, size, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          break;
+        case 'square':
+          ctx.fillRect(cx - size, cy - size, size * 2, size * 2);
+          ctx.strokeRect(cx - size, cy - size, size * 2, size * 2);
+          break;
+        case 'triangle':
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - size);
+          ctx.lineTo(cx + size, cy + size);
+          ctx.lineTo(cx - size, cy + size);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+          break;
+        case 'diamond':
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - size); ctx.lineTo(cx + size, cy); ctx.lineTo(cx, cy + size); ctx.lineTo(cx - size, cy);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+          break;
+        case 'star': {
+          ctx.beginPath();
+          for (let i = 0; i < 10; i++) {
+            const r = i % 2 === 0 ? size : size * 0.45;
+            const a = (Math.PI / 5) * i - Math.PI / 2;
+            const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+            i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+          break;
+        }
+        case 'plus':
+          ctx.fillRect(cx - size * 0.35, cy - size, size * 0.7, size * 2);
+          ctx.fillRect(cx - size, cy - size * 0.35, size * 2, size * 0.7);
+          break;
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      const n = colorCountForRound(round);
+      tiles.forEach((t) => {
+        const x = t.col * TILE, y = t.row * TILE;
+        const scale = 1 - t.fallT;
+        const alpha = t.alive ? 1 : Math.max(0, 1 - t.fallT);
+        if (t.fallT >= 1 && !t.alive) return; // fully gone — hole in the floor
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const pad = 3;
+        const w = (TILE - pad * 2) * scale;
+        const h = (TILE - pad * 2) * scale;
+        const cx = x + TILE / 2, cy = y + TILE / 2;
+        const color = COLORS[t.colorIndex % COLORS.length].hex;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(cx - w / 2, cy - h / 2, w, h, 8 * scale);
+        else ctx.rect(cx - w / 2, cy - h / 2, w, h);
+        ctx.fill();
+        if (scale > 0.4) {
+          drawShape(cx, cy, Math.min(w, h) * 0.22, COLORS[t.colorIndex % COLORS.length].shape, 'rgba(255,255,255,0.85)');
+        }
+        ctx.restore();
+      });
+
+      // car
+      ctx.beginPath();
+      ctx.arc(car.x, car.y, CAR_R, 0, Math.PI * 2);
+      ctx.fillStyle = carColorHex();
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.stroke();
+      if (owned.trail_neon) {
+        ctx.beginPath();
+        ctx.arc(car.x, car.y, CAR_R + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(57,255,158,0.5)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+    }
+
+    function carTile() {
+      const col = Math.max(0, Math.min(GRID_N - 1, Math.floor(car.x / TILE)));
+      const row = Math.max(0, Math.min(GRID_N - 1, Math.floor(car.y / TILE)));
+      return tiles.find((t) => t.col === col && t.row === row);
+    }
+
+    async function onFell() {
+      if (pendingContinueGranted) {
+        pendingContinueGranted = false;
+        usedContinueThisRun = true;
+        // respawn on a safe tile, keep the round streak going
+        const safe = tiles.filter((t) => t.alive);
+        const spot = safe[Math.floor(Math.random() * safe.length)] || tiles[0];
+        car.x = spot.col * TILE + TILE / 2;
+        car.y = spot.row * TILE + TILE / 2;
+        startRound(round + 1);
+        return;
+      }
+      state = 'gameover';
+      gameoverTitle.textContent = `You fell! Round ${round}`;
+      gameoverSub.textContent = usedContinueThisRun
+        ? `No more continues this run. Final: round ${round - 1} survived.`
+        : `Oya, one more chance?`;
+      continueBtn.style.display = usedContinueThisRun ? 'none' : 'block';
+      gameoverEl.classList.add('open');
+
+      const survived = round - 1;
+      if (survived > bestRounds) {
+        bestRounds = survived;
+        if (bestRounds !== lastSubmittedScore) {
+          lastSubmittedScore = bestRounds;
+          await vg.submitScore(bestRounds);
+        }
+      }
+      await vg.saveGame({ bestRounds });
+    }
+
+    function tick(now) {
+      if (paused) { lastFrame = null; requestAnimationFrame(tick); return; }
+      if (lastFrame === null) lastFrame = now;
+      const dt = Math.min(0.05, (now - lastFrame) / 1000);
+      lastFrame = now;
+
+      if (state !== 'gameover') {
+        car.x += joyDir.x * MAX_SPEED * dt;
+        car.y += joyDir.y * MAX_SPEED * dt;
+        car.x = Math.max(CAR_R, Math.min(CANVAS_SIZE - CAR_R, car.x));
+        car.y = Math.max(CAR_R, Math.min(CANVAS_SIZE - CAR_R, car.y));
+      }
+
+      stateTimer += dt * 1000;
+
+      if (state === 'announce') {
+        if (stateTimer >= ANNOUNCE_MS) {
+          state = 'move';
+          stateTimer = 0;
+          announceEl.classList.remove('show');
+          countdownTrack.classList.add('show');
+        }
+      } else if (state === 'move') {
+        const dur = countdownForRound(round);
+        const t = Math.min(1, stateTimer / dur);
+        countdownFill.style.transform = `scaleX(${1 - t})`;
+        if (stateTimer >= dur) {
+          state = 'drop';
+          stateTimer = 0;
+          countdownTrack.classList.remove('show');
+          tiles.forEach((t2) => { if (t2.colorIndex !== targetColorIndex) t2.fallT = 0.0001; });
+        }
+      } else if (state === 'drop') {
+        let anyFalling = false;
+        tiles.forEach((t2) => {
+          if (t2.colorIndex !== targetColorIndex) {
+            t2.fallT = Math.min(1, stateTimer / DROP_MS);
+            if (t2.fallT >= 1) t2.alive = false;
+            anyFalling = true;
+          }
+        });
+        if (stateTimer >= DROP_MS) {
+          state = 'resolve';
+          stateTimer = 0;
+        }
+      } else if (state === 'resolve') {
+        if (stateTimer >= RESOLVE_MS) {
+          const t2 = carTile();
+          if (t2 && t2.alive) {
+            state = 'regrow';
+            stateTimer = 0;
+          } else {
+            onFell();
+          }
+        }
+      } else if (state === 'regrow') {
+        tiles.forEach((t2) => { t2.alive = true; t2.fallT = 0; });
+        if (stateTimer >= REGROW_MS) {
+          startRound(round + 1);
+        }
+      }
+
+      render();
+      requestAnimationFrame(tick);
+    }
+
+    // --- joystick ---
+    let joyPointerId = null;
+    function setJoyFromClient(clientX, clientY) {
+      const rect = joystickBase.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      let dx = clientX - cx, dy = clientY - cy;
+      const maxR = rect.width / 2;
+      const len = Math.hypot(dx, dy);
+      if (len > maxR) { dx = (dx / len) * maxR; dy = (dy / len) * maxR; }
+      joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      joyDir = { x: dx / maxR, y: dy / maxR };
+    }
+    joystickBase.addEventListener('pointerdown', (e) => {
+      if (paused) return;
+      joyActive = true;
+      joyPointerId = e.pointerId;
+      try { joystickBase.setPointerCapture(e.pointerId); } catch (err) {}
+      setJoyFromClient(e.clientX, e.clientY);
+    });
+    joystickBase.addEventListener('pointermove', (e) => {
+      if (!joyActive || e.pointerId !== joyPointerId) return;
+      setJoyFromClient(e.clientX, e.clientY);
+    });
+    function releaseJoy() {
+      joyActive = false;
+      joyDir = { x: 0, y: 0 };
+      joystickKnob.style.transform = 'translate(-50%, -50%)';
+    }
+    joystickBase.addEventListener('pointerup', releaseJoy);
+    joystickBase.addEventListener('pointercancel', releaseJoy);
+
+    // --- game over actions ---
+    continueBtn.addEventListener('click', async () => {
+      continueBtn.disabled = true;
+      continueBtn.textContent = 'Opening…';
+      const res = await vg.purchase('second_chance');
+      if (res.ok || vg.devMode) {
+        pendingContinueGranted = true;
+        gameoverEl.classList.remove('open');
+        continueBtn.disabled = false;
+        continueBtn.textContent = 'Continue — ₦100';
+        await onFell(); // re-run fell logic, now with pendingContinueGranted true -> respawns
+      } else {
+        continueBtn.disabled = false;
+        continueBtn.textContent = 'Continue — ₦100';
+      }
+    });
+    endrunBtn.addEventListener('click', () => {
+      gameoverEl.classList.remove('open');
+      usedContinueThisRun = false;
+      startRound(1);
+      car.x = CANVAS_SIZE / 2;
+      car.y = CANVAS_SIZE / 2;
+    });
+
+    // Dev mode's purchase shortcut always resolves productId to the generic
+    // 'dev_product' (the kit can't know which shop row you clicked without a
+    // real purchase sheet), so in dev mode just default to unlocking the trail
+    // for easy local testing. pendingContinueGranted for second_chance is set
+    // directly by the continue-button handler below instead, for both modes.
+    vg.onClaim((productId) => {
+      if (productId === 'trail_neon' || (vg.devMode && productId === 'dev_product')) owned.trail_neon = true;
+      if (productId === 'premium_car_pack') owned.premium_car_pack = true;
+      renderShop();
+    });
+
+    // --- shop ---
+    const SHOP_ITEMS = [
+      { id: 'trail_neon', name: 'Neon Trail', price: 200, sub: 'Cosmetic car trail' },
+      { id: 'premium_car_pack', name: 'Premium Car Pack', price: 500, sub: 'Unlocks 5 extra colors' },
+    ];
+    function renderShop() {
+      shopRows.innerHTML = '';
+      SHOP_ITEMS.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'panel-row';
+        row.innerHTML = `<div><div class="row-name">${item.name}</div><div class="row-sub">${item.sub}</div></div>`;
+        const btn = document.createElement('button');
+        btn.className = 'row-btn';
+        if (owned[item.id]) {
+          btn.textContent = 'Owned';
+          btn.disabled = true;
+        } else {
+          btn.textContent = `₦${item.price}`;
+          btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Opening…';
+            const res = await vg.purchase(item.id);
+            if (!res.ok && !vg.devMode) { btn.disabled = false; btn.textContent = `₦${item.price}`; }
+          });
+        }
+        row.appendChild(btn);
+        shopRows.appendChild(row);
+      });
+    }
+
+    document.getElementById('shop-btn').addEventListener('click', () => { renderShop(); shopOverlay.classList.add('open'); });
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.remove('open'));
+    });
+    document.getElementById('leaderboard-btn').addEventListener('click', async () => {
+      leaderboardSheet.classList.add('open');
+      const { top, me } = await vg.leaderboard();
+      leaderboardList.innerHTML = '';
+      (top || []).slice(0, 3).forEach((row, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>#${i + 1} ${row.name ?? row.playerId}</span><span>${row.score}</span>`;
+        leaderboardList.appendChild(li);
+      });
+      leaderboardMe.textContent = me ? me.label : '';
+    });
+    document.getElementById('close-leaderboard').addEventListener('click', () => leaderboardSheet.classList.remove('open'));
+
+    vg.onPause(() => { paused = true; joyDir = { x: 0, y: 0 }; });
+    vg.onResume(() => { paused = false; lastFrame = null; });
+
+    renderShop();
+    startRound(1);
+    requestAnimationFrame(tick);
+  })();
+  </script>
+</body>
+</html>
