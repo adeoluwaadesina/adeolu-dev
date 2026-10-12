@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Tap Tap Lagos</title>
+<meta name="description" content="Tap the Lagos sun. Simple score chaser built on the Vatar Games platform." />
+<style>
+  :root {
+    --purple-deep: #1c0f3e;
+    --purple: #351f73;
+    --purple-light: #5a35b0;
+    --gold: #f6c453;
+    --gold-soft: #ffe9b8;
+    --paper: #fdf8ef;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    background: radial-gradient(circle at 50% 20%, var(--purple-light), var(--purple) 55%, var(--purple-deep) 100%);
+    color: var(--paper);
+    touch-action: manipulation;
+    user-select: none;
+  }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: env(safe-area-inset-top, 20px) 20px env(safe-area-inset-bottom, 20px);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+  }
+  .player-name { font-size: 14px; opacity: 0.8; }
+  .score-wrap { text-align: right; }
+  .score { font-size: 32px; font-weight: 700; color: var(--gold); line-height: 1; }
+  .score-label { font-size: 11px; opacity: 0.7; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 20px;
+  }
+
+  #tap-btn {
+    width: 44vw;
+    height: 44vw;
+    max-width: 220px;
+    max-height: 220px;
+    min-width: 160px;
+    min-height: 160px;
+    border-radius: 50%;
+    border: none;
+    background: radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold) 60%, #c98f1f 100%);
+    box-shadow: 0 0 0 8px rgba(246, 196, 83, 0.12), 0 10px 30px rgba(0,0,0,0.35);
+    font-size: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+  }
+  #tap-btn:active { transform: scale(0.92); }
+
+  .status {
+    min-height: 20px;
+    font-size: 13px;
+    opacity: 0.85;
+    text-align: center;
+  }
+
+  .multiplier-pill {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+
+  footer {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+  .action-btn {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.1);
+    color: var(--paper);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .action-btn:active { background: rgba(255,255,255,0.18); }
+  .action-btn.primary {
+    background: var(--gold);
+    color: var(--purple-deep);
+  }
+  .action-btn[disabled] { opacity: 0.55; }
+
+  #leaderboard-sheet {
+    position: fixed;
+    inset: auto 0 0 0;
+    background: var(--purple-deep);
+    border-top: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px 18px 0 0;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  #leaderboard-sheet.open { transform: translateY(0); }
+  #leaderboard-sheet h2 { margin: 0 0 14px; font-size: 16px; }
+  #leaderboard-list { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+  #leaderboard-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .leaderboard-me { font-size: 12px; opacity: 0.75; text-align: center; }
+  .close-sheet { width: 100%; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <span class="player-name" id="player-name">Player</span>
+      <div class="score-wrap">
+        <div class="score" id="score">0</div>
+        <div class="score-label">points</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="multiplier-pill" id="multiplier-pill">x1 per tap</div>
+      <button id="tap-btn" aria-label="Tap the sun">&#9728;&#65039;</button>
+      <p class="status" id="status">Tap the sun!</p>
+    </main>
+
+    <footer>
+      <button class="action-btn primary" id="buy-btn">Double Taps &mdash; &#8358;100</button>
+      <button class="action-btn" id="leaderboard-btn">Leaderboard</button>
+    </footer>
+  </div>
+
+  <div id="leaderboard-sheet">
+    <h2>Top Tappers</h2>
+    <ol id="leaderboard-list"></ol>
+    <p class="leaderboard-me" id="leaderboard-me"></p>
+    <button class="action-btn close-sheet" id="close-leaderboard">Close</button>
+  </div>
+
+  <script src="https://lagoslife.app/sdk/vatar-games-v1.js"></script>
+  <script src="/kit/vatar-helpers.js"></script>
+  <script>
+    (async function () {
+      const scoreEl = document.getElementById('score');
+      const playerNameEl = document.getElementById('player-name');
+      const tapBtn = document.getElementById('tap-btn');
+      const statusEl = document.getElementById('status');
+      const multiplierPill = document.getElementById('multiplier-pill');
+      const buyBtn = document.getElementById('buy-btn');
+      const leaderboardBtn = document.getElementById('leaderboard-btn');
+      const leaderboardSheet = document.getElementById('leaderboard-sheet');
+      const leaderboardList = document.getElementById('leaderboard-list');
+      const leaderboardMe = document.getElementById('leaderboard-me');
+      const closeLeaderboardBtn = document.getElementById('close-leaderboard');
+
+      let score = 0;
+      let hasDoubleTaps = false;
+      let paused = false;
+      let lastSubmittedScore = 0;
+      let submitTimer = null;
+
+      const vg = await VatarKit.init('tap-tap-lagos');
+
+      playerNameEl.textContent = vg.player.name || 'Player';
+      if (vg.devMode) statusEl.textContent = 'Dev mode (not framed) — tap away';
+
+      function render() {
+        scoreEl.textContent = String(score);
+        multiplierPill.textContent = hasDoubleTaps ? 'x2 per tap' : 'x1 per tap';
+      }
+
+      function setOwnedUI() {
+        buyBtn.textContent = 'Double Taps — Owned';
+        buyBtn.disabled = true;
+      }
+
+      // Restore ownership + saved score so a reload doesn't lose progress.
+      const restored = await vg.restoreOwned();
+      if (restored.owned && restored.owned.includes('double_taps')) {
+        hasDoubleTaps = true;
+        setOwnedUI();
+      }
+      if (restored.save && typeof restored.save.score === 'number') {
+        score = restored.save.score;
+        lastSubmittedScore = score;
+      }
+      render();
+
+      // Recover purchases paid but not delivered (e.g. after a reload mid-purchase).
+      await vg.recoverPendingPurchases();
+
+      vg.onClaim((productId) => {
+        if (productId === 'double_taps' || vg.devMode) {
+          hasDoubleTaps = true;
+          setOwnedUI();
+          statusEl.textContent = 'Double Taps unlocked!';
+          render();
+        }
+      });
+
+      tapBtn.addEventListener('pointerdown', () => {
+        if (paused) return;
+        score += hasDoubleTaps ? 2 : 1;
+        render();
+      });
+
+      buyBtn.addEventListener('click', async () => {
+        if (hasDoubleTaps) return;
+        statusEl.textContent = 'Opening payment sheet…';
+        buyBtn.disabled = true;
+        try {
+          const res = await vg.purchase('double_taps');
+          if (!res.ok && !vg.devMode) {
+            statusEl.textContent = 'Purchase didn’t go through.';
+            buyBtn.disabled = false;
+          }
+        } catch (err) {
+          statusEl.textContent = 'Purchase failed.';
+          buyBtn.disabled = hasDoubleTaps;
+        }
+      });
+
+      leaderboardBtn.addEventListener('click', async () => {
+        leaderboardSheet.classList.add('open');
+        const { top, me } = await vg.leaderboard();
+        leaderboardList.innerHTML = '';
+        (top || []).slice(0, 3).forEach((row, i) => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>#${i + 1} ${row.name ?? row.playerId}</span><span>${row.score}</span>`;
+          leaderboardList.appendChild(li);
+        });
+        leaderboardMe.textContent = me ? me.label : '';
+      });
+
+      closeLeaderboardBtn.addEventListener('click', () => {
+        leaderboardSheet.classList.remove('open');
+      });
+
+      // Score submission is throttled to one per 20s by the platform;
+      // only submit when the score actually changed.
+      submitTimer = setInterval(async () => {
+        if (paused || score === lastSubmittedScore) return;
+        lastSubmittedScore = score;
+        await vg.submitScore(score);
+        await vg.saveGame({ score });
+      }, 20000);
+
+      vg.onPause(() => {
+        paused = true;
+        statusEl.textContent = 'Paused';
+      });
+      vg.onResume(() => {
+        paused = false;
+        statusEl.textContent = 'Tap the sun!';
+      });
+
+      window.addEventListener('beforeunload', () => {
+        if (submitTimer) clearInterval(submitTimer);
+      });
+    })();
+  </script>
+</body>
+</html>
