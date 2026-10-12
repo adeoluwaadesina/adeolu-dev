@@ -50,6 +50,9 @@
   }
   .slot-name { font-family: var(--font-display); font-size: 18px; }
   .slot-status { font-family: var(--font-mono); font-size: 12px; color: var(--status-progress); white-space: nowrap; }
+  a.slot { text-decoration: none; color: inherit; transition: border-color 0.15s ease; }
+  a.slot:hover { border-color: var(--accent); }
+  a.slot .slot-status { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -64,14 +67,19 @@
       <h1>Games built for Lagos Life.</h1>
       <p class="lede">
         A small studio shipping original HTML5 games for the Vatar Games
-        platform inside Lagos Life. Nothing is live here yet — first title
-        is in the sandbox.
+        platform inside Lagos Life. Playable here directly for personal
+        testing — purchases and leaderboards fall back to a local dev
+        player outside the real Lagos Life frame.
       </p>
       <div class="roster">
-        <div class="slot">
+        <a class="slot" href="/games/archery/">
           <span class="slot-name">Archery</span>
-          <span class="slot-status">in progress</span>
-        </div>
+          <span class="slot-status">play &rarr;</span>
+        </a>
+        <a class="slot" href="/games/tap-tap-lagos/">
+          <span class="slot-name">Tap Tap Lagos</span>
+          <span class="slot-status">play &rarr;</span>
+        </a>
         <div class="slot">
           <span class="slot-name">Color Rush</span>
           <span class="slot-status">up next</span>
