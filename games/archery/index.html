@@ -423,6 +423,7 @@
     let arrowsShot = 0;
     let roundScores = [];
     let landedShots = [];
+    let lastPop = null;
     let wind = { speed: 0, dir: 1 };
     let aimX = 0; // -1..1 relative to target radius
     let aimY = 0; // -1..1 relative to target radius
@@ -462,7 +463,7 @@
     }
 
     function newWind(tier) {
-      const speed = Math.round(Math.random() * tier.windMax);
+      const speed = Math.round(Math.random() * tier.windMax * 10) / 10;
       const dir = Math.random() < 0.5 ? -1 : 1;
       return { speed, dir };
     }
@@ -478,6 +479,7 @@
       arrowsShot = 0;
       roundScores = [];
       landedShots = [];
+      lastPop = null;
       aimX = 0;
       aimY = 0;
       power = 0;
@@ -492,7 +494,7 @@
       const tier = TIERS[currentTierIndex];
       tierNameEl.textContent = tier.name;
       roundInfoEl.textContent = `Arrow ${Math.min(arrowsShot + 1, ARROWS_PER_ROUND)} / ${ARROWS_PER_ROUND} · Best ${bestRoundTotal}`;
-      windSpeedEl.textContent = String(wind.speed);
+      windSpeedEl.textContent = wind.speed.toFixed(1);
       windArrowEl.style.transform = `rotate(${wind.dir > 0 ? 0 : 180}deg)`;
     }
 
@@ -521,6 +523,21 @@
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
       ctx.stroke();
 
+      // scoring-ring numbers along the right side, like a real target face
+      // (every other ring only — labeling all 9 is too cramped at this display size)
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let s = 1; s <= 9; s += 2) {
+        const r = (R * (11 - s)) / 10;
+        const lx = cx + r - 8;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.strokeText(String(s), lx, cy);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText(String(s), lx, cy);
+      }
+
       // reticle preview, offset by current aim (both axes) — outlined so it reads against every ring color
       const reticleX = cx + aimX * R * 1.4;
       const reticleY = cy + aimY * R * 1.4;
@@ -545,16 +562,51 @@
         ctx.stroke();
       }
 
-      // previous landed shots this round
+      // previous landed shots this round — drawn as arrows stuck in the target
       landedShots.forEach((s) => {
+        const ix = cx + s.x;
+        const iy = cy + s.y;
+        const angle = Math.atan2(s.y, s.x) + s.jitter;
+        const shaftLen = 24;
+        const tailX = ix + Math.cos(angle) * shaftLen;
+        const tailY = iy + Math.sin(angle) * shaftLen;
+        const shaftColor = owned.trail_flame ? '#ff7a3c' : '#5a3a22';
+        const fletchColor = owned.trail_flame ? '#ffb347' : '#e8e4da';
+
         ctx.beginPath();
-        ctx.arc(cx + s.x, cy + s.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = owned.trail_flame ? '#ff7a3c' : '#2a2a2a';
-        ctx.fill();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#fff';
+        ctx.moveTo(ix, iy);
+        ctx.lineTo(tailX, tailY);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = shaftColor;
         ctx.stroke();
+
+        const perp = angle + Math.PI / 2;
+        const fletch = 6;
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(tailX + Math.cos(perp) * fletch, tailY + Math.sin(perp) * fletch);
+        ctx.lineTo(tailX - Math.cos(perp) * fletch, tailY - Math.sin(perp) * fletch);
+        ctx.closePath();
+        ctx.fillStyle = fletchColor;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(ix, iy, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fill();
       });
+
+      // big score pop-up right at the last hit, like the reference
+      if (lastPop) {
+        ctx.font = 'bold 30px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.strokeText(lastPop.text, cx + lastPop.x, cy + lastPop.y - 34);
+        ctx.fillStyle = lastPop.text === 'Miss!' ? '#ffffff' : '#f6c453';
+        ctx.fillText(lastPop.text, cx + lastPop.x, cy + lastPop.y - 34);
+      }
     }
 
     function scoreForDistance(d, R) {
@@ -580,13 +632,15 @@
 
       const landX = aimX * R * 1.4 + windDrift;
       const landY = aimY * R * 1.4 + dropOffset;
-      landedShots.push({ x: landX, y: landY });
+      const jitter = (Math.random() * 0.6 - 0.3);
+      landedShots.push({ x: landX, y: landY, jitter });
 
       const dist = Math.hypot(landX, landY);
       const score = scoreForDistance(dist, R);
       roundScores.push(score);
       arrowsShot += 1;
       showShotResult(score);
+      lastPop = { x: landX, y: landY, text: score === 0 ? 'Miss!' : `+${score}` };
 
       power = 0;
       chargeFill.style.transform = 'scaleX(0)';
@@ -687,6 +741,7 @@
       if (paused || arrowsShot >= ARROWS_PER_ROUND || anyOverlayOpen()) return;
       if (isInteractiveTarget(e.target)) return;
       aiming = true;
+      lastPop = null;
       aimAnchorX = e.clientX;
       aimAnchorY = e.clientY;
       holdStartTime = performance.now();
