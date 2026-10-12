@@ -82,7 +82,9 @@
     // --- fresh session token, required before every call to our server ---
     async _session() {
       if (this.devMode) return 'dev-session';
-      return Vatar.session();
+      const raw = await Vatar.session();
+      console.log('[VatarKit] Vatar.session() resolved with:', raw);
+      return typeof raw === 'string' ? raw : raw && (raw.session ?? raw.token);
     }
 
     // --- purchases ---
@@ -91,7 +93,9 @@
         console.warn('[VatarKit] dev mode: simulating purchase', productId);
         return this._completeClaim(`dev_${productId}_${Date.now()}`);
       }
-      const { purchaseId } = await Vatar.purchase(productId);
+      const purchaseResult = await Vatar.purchase(productId);
+      console.log('[VatarKit] Vatar.purchase() resolved with:', purchaseResult);
+      const purchaseId = purchaseResult && (purchaseResult.purchaseId ?? purchaseResult.id);
       return this._completeClaim(purchaseId);
     }
 
@@ -101,6 +105,7 @@
         return { ok: true, productId: 'dev_product' };
       }
       const session = await this._session();
+      console.log('[VatarKit] claiming with session:', session, 'purchaseId:', purchaseId);
       const res = await fetch(`${API_ROOT}/claim?game=${this.game}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
