@@ -6,3 +6,4 @@ node_modules/
 
 # per-project tracker, local only per convention
 TRACKER.md
+.env*
