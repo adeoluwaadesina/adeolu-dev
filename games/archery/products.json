@@ -1,0 +1,23 @@
+[
+  {
+    "id": "bow_gold",
+    "name": "Gold Bow",
+    "description": "A gleaming gold bow skin.",
+    "priceNaira": 150,
+    "type": "one_off"
+  },
+  {
+    "id": "trail_flame",
+    "name": "Flame Arrow Trail",
+    "description": "Your arrows leave a trail of fire.",
+    "priceNaira": 150,
+    "type": "one_off"
+  },
+  {
+    "id": "expert_unlock",
+    "name": "Expert Stage Unlock",
+    "description": "Jump straight to the Expert tier without climbing the ladder.",
+    "priceNaira": 300,
+    "type": "one_off"
+  }
+]

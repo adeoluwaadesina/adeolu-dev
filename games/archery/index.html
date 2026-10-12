@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Archery</title>
+<meta name="description" content="Beat the wind, pull the perfect draw, climb the archery ladder." />
+<style>
+  :root {
+    --sky-top: #1f3b4d;
+    --sky-bottom: #d98a4a;
+    --ground: #3a5a40;
+    --gold: #f6c453;
+    --paper: #fdf8ef;
+    --ink-soft: rgba(253,248,239,0.75);
+    --panel: rgba(16, 24, 32, 0.92);
+    --ring10: #f6c453;
+    --ring8: #d94c3a;
+    --ring6: #3a6fd9;
+    --ring4: #1a1a1a;
+    --ring2: #fdf8ef;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom) 60%, var(--ground) 60%);
+    color: var(--paper);
+    touch-action: none;
+    user-select: none;
+  }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top, 14px) 16px env(safe-area-inset-bottom, 14px);
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 13px;
+  }
+  .tier-name { font-weight: 700; font-size: 22px; }
+  .round-info { opacity: 0.8; font-size: 12px; }
+  .wind-box { text-align: right; }
+  .wind-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.06em; }
+  .wind-value { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .wind-arrow { display: inline-block; transition: transform 0.2s ease; }
+
+  .icon-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  .icon-btn {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--paper);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  #target-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+  #target-canvas { max-width: 100%; max-height: 100%; }
+
+  .shot-result {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.5);
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .shot-result.show { opacity: 1; }
+
+  #controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 10px 0 4px;
+  }
+  .aim-wrap { flex: 1; }
+  .aim-label, .power-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  #aim-track {
+    position: relative;
+    height: 44px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  #aim-handle {
+    position: absolute;
+    top: 3px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--gold);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #1a1a1a;
+  }
+
+  #power-wrap { width: 72px; }
+  #power-track {
+    position: relative;
+    height: 120px;
+    width: 56px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+  }
+  #power-fill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, #e0543c, var(--gold));
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.05s linear;
+  }
+  #power-knob {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+  }
+
+  .panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .panel-overlay.open { display: flex; }
+  .panel {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 22px;
+    width: min(92vw, 420px);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .panel h2 { margin: 0 0 14px; font-size: 18px; }
+  .panel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .panel-row:last-child { border-bottom: none; }
+  .row-name { font-size: 14px; }
+  .row-sub { font-size: 11px; opacity: 0.6; }
+  .row-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--gold);
+    color: #1a1a1a;
+  }
+  .row-btn[disabled] { opacity: 0.5; background: rgba(255,255,255,0.15); color: var(--paper); }
+  .row-btn.locked { background: rgba(255,255,255,0.1); color: var(--paper); }
+  .close-panel {
+    width: 100%;
+    margin-top: 12px;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(255,255,255,0.1);
+    color: var(--paper);
+    font-size: 14px;
+  }
+
+  #round-end {
+    position: fixed;
+    inset: auto 16px 16px 16px;
+    max-width: 448px;
+    margin: 0 auto;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 20px;
+    display: none;
+    z-index: 11;
+  }
+  #round-end.open { display: block; }
+  #round-end h2 { margin: 0 0 6px; font-size: 18px; }
+  #round-end p { margin: 0 0 14px; opacity: 0.8; font-size: 13px; }
+  #round-end button {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    background: var(--gold);
+    color: #1a1a1a;
+  }
+
+  #leaderboard-sheet {
+    position: fixed;
+    inset: auto 0 0 0;
+    background: var(--panel);
+    border-top: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px 18px 0 0;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
+    max-width: 480px;
+    margin: 0 auto;
+    z-index: 12;
+  }
+  #leaderboard-sheet.open { transform: translateY(0); }
+  #leaderboard-sheet h2 { margin: 0 0 14px; font-size: 18px; }
+  #leaderboard-list { list-style: none; margin: 0 0 14px; padding: 0; font-size: 14px; }
+  #leaderboard-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .leaderboard-me { font-size: 12px; opacity: 0.75; text-align: center; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div>
+        <div class="tier-name" id="tier-name">Beginner</div>
+        <div class="round-info" id="round-info">Arrow 1 / 3 &middot; Best 0</div>
+      </div>
+      <div class="wind-box">
+        <div class="wind-label">Wind</div>
+        <div class="wind-value"><span class="wind-arrow" id="wind-arrow">&#10148;</span><span id="wind-speed">0</span></div>
+      </div>
+    </header>
+
+    <div class="icon-row">
+      <button class="icon-btn" id="ladder-btn">Ladder</button>
+      <button class="icon-btn" id="shop-btn">Shop</button>
+      <button class="icon-btn" id="leaderboard-btn">Leaderboard</button>
+    </div>
+
+    <div id="target-wrap">
+      <canvas id="target-canvas" width="340" height="340"></canvas>
+      <div class="shot-result" id="shot-result"></div>
+    </div>
+
+    <div id="controls">
+      <div class="aim-wrap">
+        <div class="aim-label">Drag to aim</div>
+        <div id="aim-track">
+          <div id="aim-handle">&#127919;</div>
+        </div>
+      </div>
+      <div id="power-wrap">
+        <div class="power-label">Pull</div>
+        <div id="power-track">
+          <div id="power-fill"></div>
+          <div id="power-knob"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="round-end">
+    <h2 id="round-end-title">Round complete</h2>
+    <p id="round-end-sub"></p>
+    <button id="round-end-btn">Continue</button>
+  </div>
+
+  <div class="panel-overlay" id="ladder-overlay">
+    <div class="panel">
+      <h2>Ladder</h2>
+      <div id="ladder-rows"></div>
+      <button class="close-panel" data-close="ladder-overlay">Close</button>
+    </div>
+  </div>
+
+  <div class="panel-overlay" id="shop-overlay">
+    <div class="panel">
+      <h2>Shop</h2>
+      <div id="shop-rows"></div>
+      <button class="close-panel" data-close="shop-overlay">Close</button>
+    </div>
+  </div>
+
+  <div id="leaderboard-sheet">
+    <h2>Top Archers</h2>
+    <ol id="leaderboard-list"></ol>
+    <p class="leaderboard-me" id="leaderboard-me"></p>
+    <button class="close-panel" id="close-leaderboard">Close</button>
+  </div>
+
+  <script src="https://lagoslife.app/sdk/vatar-games-v1.js"></script>
+  <script src="/kit/vatar-helpers.js"></script>
+  <script>
+  (async function () {
+    const TIERS = [
+      { id: 'beginner', name: 'Beginner', windMax: 2, targetRadius: 150, pass: 12 },
+      { id: 'novice', name: 'Novice', windMax: 5, targetRadius: 130, pass: 15 },
+      { id: 'skilled', name: 'Skilled', windMax: 8, targetRadius: 110, pass: 17 },
+      { id: 'pro', name: 'Pro', windMax: 12, targetRadius: 92, pass: 19 },
+      { id: 'expert', name: 'Expert', windMax: 16, targetRadius: 76, pass: 21 },
+    ];
+    const IDEAL_POWER = 0.6;
+    const ARROWS_PER_ROUND = 3;
+    const RING_COLORS = ['#fdf8ef', '#fdf8ef', '#1a1a1a', '#1a1a1a', '#3a6fd9', '#3a6fd9', '#d94c3a', '#d94c3a', '#f6c453', '#f6c453'];
+
+    const canvas = document.getElementById('target-canvas');
+    const ctx = canvas.getContext('2d');
+    const tierNameEl = document.getElementById('tier-name');
+    const roundInfoEl = document.getElementById('round-info');
+    const windArrowEl = document.getElementById('wind-arrow');
+    const windSpeedEl = document.getElementById('wind-speed');
+    const shotResultEl = document.getElementById('shot-result');
+    const aimTrack = document.getElementById('aim-track');
+    const aimHandle = document.getElementById('aim-handle');
+    const powerTrack = document.getElementById('power-track');
+    const powerFill = document.getElementById('power-fill');
+    const powerKnob = document.getElementById('power-knob');
+    const roundEndEl = document.getElementById('round-end');
+    const roundEndTitle = document.getElementById('round-end-title');
+    const roundEndSub = document.getElementById('round-end-sub');
+    const roundEndBtn = document.getElementById('round-end-btn');
+    const ladderOverlay = document.getElementById('ladder-overlay');
+    const ladderRows = document.getElementById('ladder-rows');
+    const shopOverlay = document.getElementById('shop-overlay');
+    const shopRows = document.getElementById('shop-rows');
+    const leaderboardSheet = document.getElementById('leaderboard-sheet');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const leaderboardMe = document.getElementById('leaderboard-me');
+
+    let paused = false;
+    let unlockedTierIndex = 0;
+    let currentTierIndex = 0;
+    let bestRoundTotal = 0;
+    let owned = { bow_gold: false, trail_flame: false, expert_unlock: false };
+
+    let arrowsShot = 0;
+    let roundScores = [];
+    let landedShots = [];
+    let wind = { speed: 0, dir: 1 };
+    let aimX = 0; // -1..1 relative to target radius
+    let power = 0; // 0..1
+    let lastSubmittedScore = 0;
+
+    const vg = await VatarKit.init('archery');
+    if (vg.devMode) console.log('[archery] dev mode, mock player');
+
+    const restored = await vg.restoreOwned();
+    (restored.owned || []).forEach((id) => { if (id in owned) owned[id] = true; });
+    if (restored.save) {
+      unlockedTierIndex = restored.save.unlockedTierIndex ?? 0;
+      bestRoundTotal = restored.save.bestRoundTotal ?? 0;
+      lastSubmittedScore = bestRoundTotal;
+    }
+    currentTierIndex = unlockedTierIndex;
+
+    await vg.recoverPendingPurchases();
+
+    vg.onClaim((productId) => {
+      if (productId in owned || vg.devMode) {
+        if (vg.devMode) owned.bow_gold = true; else owned[productId] = true;
+        renderShop();
+        renderLadder();
+      }
+    });
+
+    function tierUnlocked(i) {
+      return i <= unlockedTierIndex || (TIERS[i].id === 'expert' && owned.expert_unlock);
+    }
+
+    function newWind(tier) {
+      const speed = Math.round(Math.random() * tier.windMax);
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      return { speed, dir };
+    }
+
+    function startRound(tierIndex) {
+      currentTierIndex = tierIndex;
+      arrowsShot = 0;
+      roundScores = [];
+      landedShots = [];
+      aimX = 0;
+      power = 0;
+      wind = newWind(TIERS[tierIndex]);
+      roundEndEl.classList.remove('open');
+      updateHeader();
+      render();
+    }
+
+    function updateHeader() {
+      const tier = TIERS[currentTierIndex];
+      tierNameEl.textContent = tier.name;
+      roundInfoEl.textContent = `Arrow ${Math.min(arrowsShot + 1, ARROWS_PER_ROUND)} / ${ARROWS_PER_ROUND} · Best ${bestRoundTotal}`;
+      windSpeedEl.textContent = String(wind.speed);
+      windArrowEl.style.transform = `rotate(${wind.dir > 0 ? 0 : 180}deg)`;
+    }
+
+    function render() {
+      const tier = TIERS[currentTierIndex];
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const R = tier.targetRadius;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 10; i >= 1; i--) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, (R * i) / 10, 0, Math.PI * 2);
+        ctx.fillStyle = RING_COLORS[i - 1];
+        ctx.fill();
+        if (i === 10) {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.stroke();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fill();
+
+      // reticle preview, offset by current aim
+      const reticleX = cx + aimX * R * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(reticleX - 10, cy);
+      ctx.lineTo(reticleX + 10, cy);
+      ctx.moveTo(reticleX, cy - 10);
+      ctx.lineTo(reticleX, cy + 10);
+      ctx.strokeStyle = '#f6c453';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // previous landed shots this round
+      landedShots.forEach((s) => {
+        ctx.beginPath();
+        ctx.arc(cx + s.x, cy + s.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = owned.trail_flame ? '#ff7a3c' : '#2a2a2a';
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      });
+    }
+
+    function scoreForDistance(d, R) {
+      if (d > R) return 0;
+      const ring = 10 - Math.floor((d / R) * 10);
+      return Math.max(1, Math.min(10, ring));
+    }
+
+    function showShotResult(score) {
+      shotResultEl.textContent = score === 0 ? 'Miss!' : `+${score}`;
+      shotResultEl.classList.add('show');
+      setTimeout(() => shotResultEl.classList.remove('show'), 700);
+    }
+
+    function shoot() {
+      if (paused || arrowsShot >= ARROWS_PER_ROUND) return;
+      const tier = TIERS[currentTierIndex];
+      const R = tier.targetRadius;
+
+      const windDrift = wind.speed * wind.dir * 9 + (Math.random() * 8 - 4);
+      const powerError = IDEAL_POWER - power;
+      const dropOffset = powerError * 240 + (Math.random() * 8 - 4);
+
+      const landX = aimX * R * 1.4 + windDrift;
+      const landY = dropOffset;
+      landedShots.push({ x: landX, y: landY });
+
+      const dist = Math.hypot(landX, landY);
+      const score = scoreForDistance(dist, R);
+      roundScores.push(score);
+      arrowsShot += 1;
+      showShotResult(score);
+
+      power = 0;
+      powerFill.style.transform = 'scaleY(0)';
+      render();
+      updateHeader();
+
+      if (arrowsShot >= ARROWS_PER_ROUND) {
+        setTimeout(finishRound, 750);
+      } else {
+        wind = newWind(tier);
+        updateHeader();
+      }
+    }
+
+    async function finishRound() {
+      const total = roundScores.reduce((a, b) => a + b, 0);
+      const tier = TIERS[currentTierIndex];
+      const passed = total >= tier.pass;
+
+      if (total > bestRoundTotal) {
+        bestRoundTotal = total;
+        if (bestRoundTotal !== lastSubmittedScore) {
+          lastSubmittedScore = bestRoundTotal;
+          await vg.submitScore(bestRoundTotal);
+        }
+      }
+
+      if (passed && currentTierIndex === unlockedTierIndex && unlockedTierIndex < TIERS.length - 1) {
+        unlockedTierIndex += 1;
+      }
+      await vg.saveGame({ unlockedTierIndex, bestRoundTotal });
+
+      roundEndTitle.textContent = passed ? 'Tier cleared!' : 'Round over';
+      const nextTier = TIERS[currentTierIndex + 1];
+      roundEndSub.textContent = passed
+        ? (nextTier ? `${total}/30 — ${nextTier.name} unlocked.` : `${total}/30 — you've topped the ladder.`)
+        : `${total}/30 — needed ${tier.pass} to clear ${tier.name}. Try again.`;
+      roundEndBtn.textContent = passed && nextTier ? `Next: ${nextTier.name}` : 'Retry';
+      roundEndEl.classList.add('open');
+      updateHeader();
+      renderLadder();
+    }
+
+    roundEndBtn.addEventListener('click', () => {
+      const tier = TIERS[currentTierIndex];
+      const total = roundScores.reduce((a, b) => a + b, 0);
+      const passed = total >= tier.pass;
+      const nextIndex = passed && currentTierIndex < TIERS.length - 1 ? currentTierIndex + 1 : currentTierIndex;
+      startRound(nextIndex);
+    });
+
+    // --- aim control: drag along the horizontal track ---
+    let aimDragging = false;
+    function setAimFromClientX(clientX) {
+      const rect = aimTrack.getBoundingClientRect();
+      const t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      aimX = t * 2 - 1; // -1..1
+      aimHandle.style.left = `${t * 100}%`;
+      render();
+    }
+    aimTrack.addEventListener('pointerdown', (e) => {
+      aimDragging = true;
+      aimTrack.setPointerCapture(e.pointerId);
+      setAimFromClientX(e.clientX);
+    });
+    aimTrack.addEventListener('pointermove', (e) => {
+      if (aimDragging) setAimFromClientX(e.clientX);
+    });
+    aimTrack.addEventListener('pointerup', () => { aimDragging = false; });
+    aimTrack.addEventListener('pointercancel', () => { aimDragging = false; });
+
+    // --- power control: press, drag up to build power, release to shoot ---
+    let powerDragging = false;
+    let powerStartY = 0;
+    function setPowerFromDelta(dy) {
+      const t = Math.max(0, Math.min(1, dy / 110));
+      power = t;
+      powerFill.style.transform = `scaleY(${t})`;
+    }
+    powerKnob.addEventListener('pointerdown', (e) => {
+      if (paused) return;
+      powerDragging = true;
+      powerStartY = e.clientY;
+      powerKnob.setPointerCapture(e.pointerId);
+    });
+    powerKnob.addEventListener('pointermove', (e) => {
+      if (!powerDragging) return;
+      const dy = powerStartY - e.clientY;
+      setPowerFromDelta(dy);
+    });
+    function releasePower() {
+      if (!powerDragging) return;
+      powerDragging = false;
+      if (power > 0.08) shoot();
+      else { power = 0; powerFill.style.transform = 'scaleY(0)'; }
+    }
+    powerKnob.addEventListener('pointerup', releasePower);
+    powerKnob.addEventListener('pointercancel', releasePower);
+
+    // --- ladder panel ---
+    function renderLadder() {
+      ladderRows.innerHTML = '';
+      TIERS.forEach((tier, i) => {
+        const unlocked = tierUnlocked(i);
+        const row = document.createElement('div');
+        row.className = 'panel-row';
+        row.innerHTML = `
+          <div>
+            <div class="row-name">${tier.name}</div>
+            <div class="row-sub">Wind up to ${tier.windMax} &middot; need ${tier.pass}/30</div>
+          </div>
+        `;
+        const btn = document.createElement('button');
+        btn.className = 'row-btn' + (unlocked ? '' : ' locked');
+        btn.textContent = unlocked ? 'Play' : 'Locked';
+        btn.disabled = !unlocked;
+        btn.addEventListener('click', () => {
+          ladderOverlay.classList.remove('open');
+          startRound(i);
+        });
+        row.appendChild(btn);
+        ladderRows.appendChild(row);
+      });
+    }
+
+    // --- shop panel ---
+    const SHOP_ITEMS = [
+      { id: 'bow_gold', name: 'Gold Bow', price: 150, sub: 'Cosmetic bow skin' },
+      { id: 'trail_flame', name: 'Flame Arrow Trail', price: 150, sub: 'Cosmetic arrow trail' },
+      { id: 'expert_unlock', name: 'Expert Stage Unlock', price: 300, sub: 'Skip straight to Expert' },
+    ];
+    function renderShop() {
+      shopRows.innerHTML = '';
+      SHOP_ITEMS.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'panel-row';
+        row.innerHTML = `
+          <div>
+            <div class="row-name">${item.name}</div>
+            <div class="row-sub">${item.sub}</div>
+          </div>
+        `;
+        const btn = document.createElement('button');
+        btn.className = 'row-btn';
+        if (owned[item.id]) {
+          btn.textContent = 'Owned';
+          btn.disabled = true;
+        } else {
+          btn.textContent = `₦${item.price}`;
+          btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Opening…';
+            const res = await vg.purchase(item.id);
+            if (!res.ok && !vg.devMode) {
+              btn.disabled = false;
+              btn.textContent = `₦${item.price}`;
+            }
+          });
+        }
+        row.appendChild(btn);
+        shopRows.appendChild(row);
+      });
+    }
+
+    document.getElementById('ladder-btn').addEventListener('click', () => {
+      renderLadder();
+      ladderOverlay.classList.add('open');
+    });
+    document.getElementById('shop-btn').addEventListener('click', () => {
+      renderShop();
+      shopOverlay.classList.add('open');
+    });
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.dataset.close).classList.remove('open');
+      });
+    });
+
+    document.getElementById('leaderboard-btn').addEventListener('click', async () => {
+      leaderboardSheet.classList.add('open');
+      const { top, me } = await vg.leaderboard();
+      leaderboardList.innerHTML = '';
+      (top || []).slice(0, 3).forEach((row, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>#${i + 1} ${row.name ?? row.playerId}</span><span>${row.score}</span>`;
+        leaderboardList.appendChild(li);
+      });
+      leaderboardMe.textContent = me ? me.label : '';
+    });
+    document.getElementById('close-leaderboard').addEventListener('click', () => {
+      leaderboardSheet.classList.remove('open');
+    });
+
+    vg.onPause(() => { paused = true; });
+    vg.onResume(() => { paused = false; });
+
+    renderLadder();
+    renderShop();
+    startRound(currentTierIndex);
+  })();
+  </script>
+</body>
+</html>
