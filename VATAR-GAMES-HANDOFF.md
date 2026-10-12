@@ -121,6 +121,12 @@ does this player already own and what's their save."
 
 ## 6. Repo structure and what's already built
 
+**Latest local update, 2026-10-12:** Codex polished archery and developed the
+existing Color Rush prototype into solo and three-bot play. Changes are in the
+uncommitted `dev` working tree, not deployed. See [CLAUDE-REVIEW.md](CLAUDE-REVIEW.md)
+for review instructions, evidence and outstanding validation. Earlier sandbox
+passes below refer to the versions described in the original handoff.
+
 Everything lives in one repo: **`adeoluwaadesina/adeolu-dev`** (also hosts
 Adeolu's personal portfolio at the root — that part is his, hands off unless
 told otherwise).
@@ -163,11 +169,23 @@ single press-hold-drag-release gesture controls both aim (free 2D drag) and
 power (auto-charges the longer you hold, like pulling a bowstring) — release
 manually or it auto-fires past a timeout, matching the reference game's feel.
 Three products (two cosmetic, one progression-skip). Passed the full sandbox
-checklist. **This is the most visually "finished" game so far and the best
-reference point for what "good" currently looks like here — it's still flat
-canvas-drawn shapes, no real physics, no particle effects.**
+checklist for the earlier version. The 2026-10-12 local polish adds layered
+procedural terrain and foliage, a visible bow, animated arrow flight, impact
+particles, synthesized sound, a draw sweet spot and stronger pause/input
+handling. Flight is an arcade visual arc with deterministic wind/power landing
+offsets, not a full ballistic physics simulation. New changes await review and
+real-iframe validation.
 
-Both games are built as a **single self-contained HTML file** — inline
+**`color-rush`** — the existing solo prototype was developed locally on
+2026-10-12 using Adeolu's supplied gameplay recording as a mechanics reference.
+It now has a perspective 4×4 floating arena over a stylized lagoon, detailed
+cars, steering/braking, solo or three bots, collision push-offs, persistent
+colour-and-symbol cues, animated tile/car falls, pause and free replay. A
+continue retries the failed round rather than crediting it as survived.
+Real multiplayer is not implemented; sandbox/registration status was not
+verified in this session.
+
+These games are built as a **single self-contained HTML file per game** — inline
 `<style>` and `<script>`, Canvas 2D for any graphics, no build step, no
 external art assets (everything is code-drawn shapes/gradients). That's a
 deliberate project convention (see §8), not a limitation of the platform —
@@ -178,9 +196,9 @@ below if a game's physics calls for it.
 
 Priority order, solo-first then bots then real multiplayer (see §7a for why):
 
-1. **archery** (done, solo) — iMessage GamePigeon-style, wind + draw-power
+1. **archery** (solo; local polish awaiting review) — wind + draw-power
 2. **color-rush** — 4 cars on a grid, dodge the "wrong color" tiles that drop
-   away (Fall Guys "Block Party" but cars), survive-the-rounds solo mode first
+   away; local solo and three-bot modes implemented, awaiting review
 3. **dispatch-rider** — Lagos Island food delivery, lane-runner or top-down
    scrolling, dodge obstacles (potholes, danfos, hawkers), fragile cargo spills
 4. **whot** — Nigerian card game, shared deck/turn engine, easiest first
@@ -257,3 +275,14 @@ Max 4 players in every game, always.
   claim endpoint with no useful client-side error — if a purchase "does
   nothing," check Vercel's env vars and function logs before assuming the
   client code is wrong.
+
+## 10. Latest local verification — 2026-10-12
+
+`games/tests/gameplay.cjs` passed 31 browser checks with no page runtime errors.
+Screenshots of both games and their result states were inspected at 375×812;
+Color Rush also passed layout assertions at 320×568 and 430×812. The real SDK
+loaded in standalone dev mode; host lifecycle callbacks and purchases were
+simulated locally. This does not replace physical-phone, real iframe, purchase
+recovery or server verification checks. No integration files were changed and
+no deployment was made. See `games/tests/README.md` to reproduce and
+[CLAUDE-REVIEW.md](CLAUDE-REVIEW.md) for the next review.
