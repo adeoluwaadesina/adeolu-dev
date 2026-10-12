@@ -11,7 +11,10 @@ export default async function handler(req, res) {
   const { session, purchaseId } = req.body || {};
 
   try {
-    if (!purchaseId) throw httpError(400, 'missing_purchase_id');
+    if (!purchaseId) {
+      console.error('[claim] missing_purchase_id, raw body:', JSON.stringify(req.body));
+      throw httpError(400, 'missing_purchase_id');
+    }
 
     const { playerId, mode } = await verifySession(game, session);
     const purchase = await getPurchase(game, purchaseId);
@@ -33,6 +36,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, productId: purchase.productId });
   } catch (err) {
     const status = err.status || 500;
+    console.error('[claim] failed:', err.code || err.message, 'body:', JSON.stringify(req.body));
     return res.status(status).json({ error: err.code || 'internal_error' });
   }
 }
