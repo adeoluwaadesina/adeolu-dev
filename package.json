@@ -1,0 +1,12 @@
+{
+  "name": "vatar-games-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.5"
+  }
+}
