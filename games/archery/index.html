@@ -7,18 +7,14 @@
 <meta name="description" content="Beat the wind, pull the perfect draw, climb the archery ladder." />
 <style>
   :root {
-    --sky-top: #1f3b4d;
-    --sky-bottom: #d98a4a;
-    --ground: #3a5a40;
+    --sky-top: #6fb7e6;
+    --sky-horizon: #cfe9f5;
+    --ground-near: #2f5233;
+    --ground-far: #4f7a4a;
     --gold: #f6c453;
     --paper: #fdf8ef;
-    --ink-soft: rgba(253,248,239,0.75);
     --panel: rgba(16, 24, 32, 0.92);
-    --ring10: #f6c453;
-    --ring8: #d94c3a;
-    --ring6: #3a6fd9;
-    --ring4: #1a1a1a;
-    --ring2: #fdf8ef;
+    --hud: rgba(10, 16, 14, 0.42);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -26,7 +22,7 @@
     height: 100%;
     overflow: hidden;
     font-family: -apple-system, "Segoe UI", sans-serif;
-    background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom) 60%, var(--ground) 60%);
+    background: #1a1a1a;
     color: var(--paper);
     touch-action: none;
     user-select: none;
@@ -37,65 +33,148 @@
     flex-direction: column;
     max-width: 480px;
     margin: 0 auto;
-    padding: env(safe-area-inset-top, 14px) 16px env(safe-area-inset-bottom, 14px);
   }
-  header {
+
+  /* --- scene: sky, mountains, trees, ground, target --- */
+  #scene {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-horizon) 56%, var(--ground-far) 58%, var(--ground-near) 100%);
+  }
+  #mountains {
+    position: absolute;
+    left: 0; right: 0;
+    top: 0;
+    height: 58%;
+    width: 100%;
+  }
+  .tree {
+    position: absolute;
+    bottom: 42%;
+    width: 0;
+    height: 0;
+    border-left: 13px solid transparent;
+    border-right: 13px solid transparent;
+    border-bottom: 34px solid #2d4a2e;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.12));
+  }
+  .tree::after {
+    content: '';
+    position: absolute;
+    left: -9px;
+    top: 22px;
+    width: 18px;
+    height: 14px;
+    background: #6b4a2f;
+  }
+  #lanes { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  #target-stand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center bottom;
+    transition: transform 0.25s ease, top 0.25s ease;
+  }
+  #target-canvas { display: block; width: 190px; height: 190px; }
+  .stand-leg {
+    position: absolute;
+    bottom: -26px;
+    width: 10px;
+    height: 30px;
+    background: #6b4a2f;
+  }
+  .stand-leg.left { left: 36%; transform: skewX(-12deg); }
+  .stand-leg.right { right: 36%; transform: skewX(12deg); }
+
+  .distance-badge {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    background: #c0392b;
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- HUD overlay on top of the scene --- */
+  .hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: env(safe-area-inset-top, 14px) 16px 10px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    font-size: 13px;
   }
-  .tier-name { font-weight: 700; font-size: 22px; }
-  .round-info { opacity: 0.8; font-size: 12px; }
+  .tier-name {
+    font-weight: 800;
+    font-size: 22px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  .round-info {
+    opacity: 0.9;
+    font-size: 12px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
   .wind-box { text-align: right; }
-  .wind-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.06em; }
-  .wind-value { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+  .wind-label { font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.06em; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+  .wind-value {
+    font-size: 22px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
   .wind-arrow { display: inline-block; transition: transform 0.2s ease; }
 
   .icon-row {
+    position: absolute;
+    top: 64px;
+    left: 16px;
+    right: 16px;
     display: flex;
     justify-content: space-between;
-    margin-top: 6px;
   }
   .icon-btn {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: var(--hud);
+    backdrop-filter: blur(2px);
+    border: 1px solid rgba(255,255,255,0.25);
     color: var(--paper);
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 12px;
   }
 
-  #target-wrap {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-  }
-  #target-canvas { max-width: 100%; max-height: 100%; }
-
   .shot-result {
     position: absolute;
-    top: 8px;
+    top: 112px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.55);
     padding: 6px 16px;
     border-radius: 999px;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     opacity: 0;
     transition: opacity 0.15s ease;
   }
   .shot-result.show { opacity: 1; }
 
+  /* --- controls below the scene --- */
   #controls {
     display: flex;
     align-items: flex-end;
     gap: 16px;
-    padding: 10px 0 4px;
+    padding: 10px 16px calc(env(safe-area-inset-bottom, 10px) + 8px);
+    background: #16211a;
   }
   .aim-wrap { flex: 1; }
   .aim-label, .power-label { font-size: 11px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
@@ -247,25 +326,49 @@
 </head>
 <body>
   <div id="app">
-    <header>
-      <div>
-        <div class="tier-name" id="tier-name">Beginner</div>
-        <div class="round-info" id="round-info">Arrow 1 / 3 &middot; Best 0</div>
-      </div>
-      <div class="wind-box">
-        <div class="wind-label">Wind</div>
-        <div class="wind-value"><span class="wind-arrow" id="wind-arrow">&#10148;</span><span id="wind-speed">0</span></div>
-      </div>
-    </header>
+    <div id="scene">
+      <svg id="mountains" viewBox="0 0 400 140" preserveAspectRatio="none">
+        <polygon points="0,140 0,70 60,30 120,75 170,40 230,80 280,35 340,72 400,45 400,140" fill="#9fb7c9" opacity="0.65" />
+        <polygon points="0,140 0,95 70,55 140,98 210,60 270,100 330,65 400,92 400,140" fill="#7e9aad" opacity="0.8" />
+      </svg>
 
-    <div class="icon-row">
-      <button class="icon-btn" id="ladder-btn">Ladder</button>
-      <button class="icon-btn" id="shop-btn">Shop</button>
-      <button class="icon-btn" id="leaderboard-btn">Leaderboard</button>
-    </div>
+      <div class="tree" style="left:6%"></div>
+      <div class="tree" style="left:13%; bottom:40%; transform:scale(0.8)"></div>
+      <div class="tree" style="left:20%; bottom:43%; transform:scale(0.65)"></div>
+      <div class="tree" style="right:6%"></div>
+      <div class="tree" style="right:13%; bottom:40%; transform:scale(0.8)"></div>
+      <div class="tree" style="right:20%; bottom:43%; transform:scale(0.65)"></div>
 
-    <div id="target-wrap">
-      <canvas id="target-canvas" width="340" height="340"></canvas>
+      <svg id="lanes" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polyline points="2,100 47,60" stroke="rgba(255,255,255,0.55)" stroke-width="0.6" fill="none" />
+        <polyline points="98,100 53,60" stroke="rgba(255,255,255,0.55)" stroke-width="0.6" fill="none" />
+      </svg>
+
+      <div id="target-stand">
+        <canvas id="target-canvas" width="340" height="340"></canvas>
+        <div class="stand-leg left"></div>
+        <div class="stand-leg right"></div>
+      </div>
+
+      <div class="distance-badge" id="distance-badge">20ft</div>
+
+      <header class="hud">
+        <div>
+          <div class="tier-name" id="tier-name">Beginner</div>
+          <div class="round-info" id="round-info">Arrow 1 / 3 &middot; Best 0</div>
+        </div>
+        <div class="wind-box">
+          <div class="wind-label">Wind</div>
+          <div class="wind-value"><span class="wind-arrow" id="wind-arrow">&#10148;</span><span id="wind-speed">0</span></div>
+        </div>
+      </header>
+
+      <div class="icon-row">
+        <button class="icon-btn" id="ladder-btn">Ladder</button>
+        <button class="icon-btn" id="shop-btn">Shop</button>
+        <button class="icon-btn" id="leaderboard-btn">Leaderboard</button>
+      </div>
+
       <div class="shot-result" id="shot-result"></div>
     </div>
 
@@ -320,18 +423,21 @@
   <script>
   (async function () {
     const TIERS = [
-      { id: 'beginner', name: 'Beginner', windMax: 2, targetRadius: 150, pass: 12 },
-      { id: 'novice', name: 'Novice', windMax: 5, targetRadius: 130, pass: 15 },
-      { id: 'skilled', name: 'Skilled', windMax: 8, targetRadius: 110, pass: 17 },
-      { id: 'pro', name: 'Pro', windMax: 12, targetRadius: 92, pass: 19 },
-      { id: 'expert', name: 'Expert', windMax: 16, targetRadius: 76, pass: 21 },
+      { id: 'beginner', name: 'Beginner', windMax: 2, targetRadius: 150, pass: 12, distanceFt: 20, visualScale: 1.0, visualTop: '58%' },
+      { id: 'novice', name: 'Novice', windMax: 5, targetRadius: 130, pass: 15, distanceFt: 30, visualScale: 0.86, visualTop: '55%' },
+      { id: 'skilled', name: 'Skilled', windMax: 8, targetRadius: 110, pass: 17, distanceFt: 40, visualScale: 0.72, visualTop: '52%' },
+      { id: 'pro', name: 'Pro', windMax: 12, targetRadius: 92, pass: 19, distanceFt: 50, visualScale: 0.6, visualTop: '49%' },
+      { id: 'expert', name: 'Expert', windMax: 16, targetRadius: 76, pass: 21, distanceFt: 65, visualScale: 0.48, visualTop: '46%' },
     ];
     const IDEAL_POWER = 0.6;
     const ARROWS_PER_ROUND = 3;
-    const RING_COLORS = ['#fdf8ef', '#fdf8ef', '#1a1a1a', '#1a1a1a', '#3a6fd9', '#3a6fd9', '#d94c3a', '#d94c3a', '#f6c453', '#f6c453'];
+    // center -> outer: gold, gold, red, red, blue, blue, black, black, white, white
+    const RING_COLORS = ['#f6c453', '#f6c453', '#d94c3a', '#d94c3a', '#3a6fd9', '#3a6fd9', '#1a1a1a', '#1a1a1a', '#fdf8ef', '#fdf8ef'];
 
     const canvas = document.getElementById('target-canvas');
     const ctx = canvas.getContext('2d');
+    const targetStand = document.getElementById('target-stand');
+    const distanceBadge = document.getElementById('distance-badge');
     const tierNameEl = document.getElementById('tier-name');
     const roundInfoEl = document.getElementById('round-info');
     const windArrowEl = document.getElementById('wind-arrow');
@@ -339,7 +445,6 @@
     const shotResultEl = document.getElementById('shot-result');
     const aimTrack = document.getElementById('aim-track');
     const aimHandle = document.getElementById('aim-handle');
-    const powerTrack = document.getElementById('power-track');
     const powerFill = document.getElementById('power-fill');
     const powerKnob = document.getElementById('power-knob');
     const roundEndEl = document.getElementById('round-end');
@@ -400,6 +505,12 @@
       return { speed, dir };
     }
 
+    function applyTierVisuals(tier) {
+      targetStand.style.top = tier.visualTop;
+      targetStand.style.transform = `translate(-50%, -50%) scale(${tier.visualScale})`;
+      distanceBadge.textContent = `${tier.distanceFt}ft`;
+    }
+
     function startRound(tierIndex) {
       currentTierIndex = tierIndex;
       arrowsShot = 0;
@@ -409,6 +520,7 @@
       power = 0;
       wind = newWind(TIERS[tierIndex]);
       roundEndEl.classList.remove('open');
+      applyTierVisuals(TIERS[tierIndex]);
       updateHeader();
       render();
     }
@@ -427,21 +539,24 @@
       const cy = canvas.height / 2;
       const R = tier.targetRadius;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // wooden backing board behind the rings
+      ctx.beginPath();
+      ctx.arc(cx, cy, R + 14, 0, Math.PI * 2);
+      ctx.fillStyle = '#caa06a';
+      ctx.fill();
+
       for (let i = 10; i >= 1; i--) {
         ctx.beginPath();
         ctx.arc(cx, cy, (R * i) / 10, 0, Math.PI * 2);
         ctx.fillStyle = RING_COLORS[i - 1];
         ctx.fill();
-        if (i === 10) {
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.stroke();
-        }
       }
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
       ctx.beginPath();
-      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fill();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.stroke();
 
       // reticle preview, offset by current aim
       const reticleX = cx + aimX * R * 1.4;
@@ -605,7 +720,7 @@
         row.innerHTML = `
           <div>
             <div class="row-name">${tier.name}</div>
-            <div class="row-sub">Wind up to ${tier.windMax} &middot; need ${tier.pass}/30</div>
+            <div class="row-sub">${tier.distanceFt}ft &middot; wind up to ${tier.windMax} &middot; need ${tier.pass}/30</div>
           </div>
         `;
         const btn = document.createElement('button');
